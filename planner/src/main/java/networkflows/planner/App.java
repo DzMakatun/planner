@@ -54,7 +54,7 @@ public final class App
 
         try {
             URL amazon = new URL("http://www.tut.by");
-            URL yahoo = new URL("http://www.yahoo.com");
+            URL yahoo = new URL("http://www.onliner.by");
             URL ebay = new URL("http://www.ebay.com");
 
             // add the vertices
