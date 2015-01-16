@@ -55,7 +55,7 @@ public final class App
         try {
             URL amazon = new URL("http://www.tut.by");
             URL yahoo = new URL("http://www.onliner.by");
-            URL ebay = new URL("http://www.ebay.com");
+            URL ebay = new URL("http://www.nn.by");
 
             // add the vertices
             g.addVertex(amazon);
