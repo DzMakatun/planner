@@ -53,7 +53,7 @@ public final class App
             new DefaultDirectedGraph<URL, DefaultEdge>(DefaultEdge.class);
 
         try {
-            URL amazon = new URL("http://www.amazon.com");
+            URL amazon = new URL("http://www.tut.by");
             URL yahoo = new URL("http://www.yahoo.com");
             URL ebay = new URL("http://www.ebay.com");
 
