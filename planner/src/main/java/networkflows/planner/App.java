@@ -30,6 +30,7 @@ public final class App
     	System.out.println("Starting Test");
     	
     	DataProductionPlanner planner = new DataProductionPlanner();
+    	planner.ReadNodesFromFile("input/nodes.csv");
 
 
     	//measure execution time

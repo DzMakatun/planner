@@ -1,0 +1,6 @@
+# This file contains computational nodes 
+# id, Name, isInputSource, isOutputDestination, isInputDestination, isOutputSource, inputWeight
+1,RCF,true,true,true,true,1000
+2,PDSF,false,false,true,true,1000
+3,ANL,false,false,true,true,1000
+4,KISTI,false,false,true,true,1000
