@@ -3,6 +3,9 @@
  */
 package networkflows.planner;
 
+import java.io.IOException;
+import java.util.logging.Level;
+
 /**
  * @author Dima
  *
@@ -31,6 +34,20 @@ public class CompNode {
 		this.inputWeight = inputWeight;
 	}
 
+	public CompNode(String [] row) throws IOException {
+		if (row.length != 7) {  //check number of records for each node
+    		throw new IOException("Wrong number of parameters (format missmatch) in a row.");
+    	}
+
+		this.id = Integer.parseInt(row[0]);
+		this.name = row[1];
+		this.isInputSource = Boolean.valueOf(row[2]);
+		this.isOutputDestination = Boolean.valueOf(row[3]);
+		this.isInputDestination = Boolean.valueOf(row[4]);
+		this.isOutputSource = Boolean.valueOf(row[5]);
+		this.inputWeight = Integer.parseInt(row[6]);
+	}
+	
 	@Override
 	public String toString() {
 		return "CompNode [id=" + id + ", name=" + name + ", isInputSource="

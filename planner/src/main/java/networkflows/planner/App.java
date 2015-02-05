@@ -31,6 +31,7 @@ public final class App
     	
     	DataProductionPlanner planner = new DataProductionPlanner();
     	planner.ReadNodesFromFile("input/nodes.csv");
+    	planner.ReadLinksFromFile("input/links.csv");
 
 
     	//measure execution time
