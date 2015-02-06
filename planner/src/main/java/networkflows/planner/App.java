@@ -43,6 +43,7 @@ public final class App
         }else{
         	System.out.println("Grid is inconsistent");
         }
+        planner.ConstructGrid();
         System.out.println("Elapsed time in ms: " + elapsedTime);
         
     	

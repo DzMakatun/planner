@@ -1,6 +1,7 @@
 package networkflows.planner;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URL;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -8,6 +9,12 @@ import java.util.logging.SimpleFormatter;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import org.jgrapht.*;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.DefaultWeightedEdge;
+import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 
 import au.com.bytecode.opencsv.CSVReader;
 
@@ -19,6 +26,8 @@ public class DataProductionPlanner {
 	private static final Logger logger = Logger.getLogger( DataProductionPlanner.class.getName() );
 	private static FileHandler fh;
 	private static SimpleFormatter formatter;
+	private SimpleDirectedWeightedGraph<CompNode, DefaultWeightedEdge> grid;
+	
 	
 	//constructor
 	public DataProductionPlanner() { 
@@ -180,6 +189,32 @@ public class DataProductionPlanner {
 		}else{
 			return true;
 		}
+	}
+	
+	//search node by id
+	private CompNode getNode(int id){
+		for (CompNode node: this.nodes){
+			if (node.getId() == id){
+				return node;
+			}
+		}
+		return null;
+	}
+	
+	public void ConstructGrid(){
+		this.grid = new SimpleDirectedWeightedGraph<CompNode, DefaultWeightedEdge>(DefaultWeightedEdge.class);
+		for (CompNode node: this.nodes){
+		this.grid.addVertex(node);
+		}
+		for (NetworkLink link: this.links){
+			DefaultWeightedEdge e = new DefaultWeightedEdge();
+			CompNode bnode = getNode(link.getBeginNodeId());
+			CompNode enode = getNode(link.getEndNodeId());
+			this.grid.addEdge(bnode,enode,e);
+			this.grid.setEdgeWeight(e, link.getBandwidth());
+			}
+		DataProductionPlanner.logger.log( Level.INFO, "Grid graph created" + grid.toString());
+		//System.out.println(grid.toString());
 	}
 
 }
