@@ -21,6 +21,35 @@ public class CompNode {
 
 	private int inputWeight;				//weight (bandwidth) for the input transfer problem	
 
+
+	public int getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public boolean isInputSource() {
+		return isInputSource;
+	}
+
+	public boolean isOutputDestination() {
+		return isOutputDestination;
+	}
+
+	public boolean isInputDestination() {
+		return isInputDestination;
+	}
+
+	public boolean isOutputSource() {
+		return isOutputSource;
+	}
+
+	public int getInputWeight() {
+		return inputWeight;
+	}
+	
 	//constructor
 	public CompNode(int id, String name, boolean isInputSource,
 			boolean isOutputDestination, boolean isInputDestination,
@@ -57,6 +86,25 @@ public class CompNode {
 				+ ", inputWeight=" + inputWeight + "]";
 	}
 	
+	//comparison of two nodes
+	@Override 
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final CompNode other = (CompNode) obj;
+        if (this.id == other.id) //nodes has same id
+            return true;
+        return false;
+    }
 	
+	@Override
+    public int hashCode() {
+        return this.id;
+    }
+
 
 }

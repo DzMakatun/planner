@@ -45,6 +45,45 @@ public class NetworkLink {
 				+ beginNodeId + ", endNodeId=" + endNodeId + ", bandwidth="
 				+ bandwidth + "]";
 	}
+
+	public int getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public int getBeginNodeId() {
+		return beginNodeId;
+	}
+
+	public int getEndNodeId() {
+		return endNodeId;
+	}
+
+	public int getBandwidth() {
+		return bandwidth;
+	}
 	
+	//comparison of two links
+	@Override 
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        final NetworkLink other = (NetworkLink) obj;
+        if (this.id == other.id) //nodes has same id
+            return true;
+        return false;
+    }
+	
+	@Override
+    public int hashCode() {
+        return this.id;
+    }
 	
 }

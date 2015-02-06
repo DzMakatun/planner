@@ -37,8 +37,14 @@ public final class App
     	//measure execution time
         long stopTime = System.currentTimeMillis();
         long elapsedTime = stopTime - startTime;
+        planner.PrintGridSetup();
+        if (planner.GridIsCostintent()){
+        	System.out.println("Grid passed the consistency check");
+        }else{
+        	System.out.println("Grid is inconsistent");
+        }
         System.out.println("Elapsed time in ms: " + elapsedTime);
-    	
+        
     	
 
     	
