@@ -1,44 +1,42 @@
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner <init>
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner <init>
 INFO: DataProductionPlanner Instantiated
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadNodesFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadNodesFromFile
 INFO: Reading nodes from file: input/nodes.csv
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadNodesFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadNodesFromFile
 FINEST: Node red from file: CompNode [id=1, name=RCF, isInputSource=true, isOutputDestination=true, isInputDestination=true, isOutputSource=true, inputWeight=1000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadNodesFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadNodesFromFile
 FINEST: Node red from file: CompNode [id=2, name=PDSF, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadNodesFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadNodesFromFile
 FINEST: Node red from file: CompNode [id=3, name=ANL, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadNodesFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadNodesFromFile
 FINEST: Node red from file: CompNode [id=4, name=KISTI, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadNodesFromFile
-INFO: Nodes were red successfully
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadNodesFromFile
+INFO: Reading nodes file is finished
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 INFO: Reading links from file: input/links.csv
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 FINEST: Link red from file: NetworkLink [id=1, name=RCF->PDSF, beginNodeId=1, endNodeId=2, bandwidth=5000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 FINEST: Link red from file: NetworkLink [id=2, name=PDSF->RCF, beginNodeId=2, endNodeId=1, bandwidth=5000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 FINEST: Link red from file: NetworkLink [id=3, name=RCF->ANL, beginNodeId=1, endNodeId=3, bandwidth=5000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 FINEST: Link red from file: NetworkLink [id=4, name=ANL->RCF, beginNodeId=3, endNodeId=1, bandwidth=5000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 FINEST: Link red from file: NetworkLink [id=5, name=RCF->KISTI, beginNodeId=1, endNodeId=4, bandwidth=5000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 FINEST: Link red from file: NetworkLink [id=6, name=KISTI->RCF, beginNodeId=4, endNodeId=1, bandwidth=5000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 FINEST: Link red from file: NetworkLink [id=7, name=PDSF->ANL, beginNodeId=2, endNodeId=3, bandwidth=5000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 FINEST: Link red from file: NetworkLink [id=8, name=ANL->PDSF, beginNodeId=3, endNodeId=2, bandwidth=5000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 FINEST: Link red from file: NetworkLink [id=9, name=PDSF->KISTI, beginNodeId=2, endNodeId=4, bandwidth=5000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 FINEST: Link red from file: NetworkLink [id=10, name=KISTI->PDSF, beginNodeId=4, endNodeId=2, bandwidth=5000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 FINEST: Link red from file: NetworkLink [id=11, name=ANL->KISTI, beginNodeId=3, endNodeId=4, bandwidth=5000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
 FINEST: Link red from file: NetworkLink [id=12, name=KISTI->ANL, beginNodeId=4, endNodeId=3, bandwidth=5000]
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
-INFO: Links were red successfully
-Feb 06, 2015 3:52:39 PM networkflows.planner.DataProductionPlanner ConstructGrid
-INFO: Grid graph created([CompNode [id=1, name=RCF, isInputSource=true, isOutputDestination=true, isInputDestination=true, isOutputSource=true, inputWeight=1000], CompNode [id=2, name=PDSF, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000], CompNode [id=3, name=ANL, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000], CompNode [id=4, name=KISTI, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000]], [(CompNode [id=1, name=RCF, isInputSource=true, isOutputDestination=true, isInputDestination=true, isOutputSource=true, inputWeight=1000],CompNode [id=2, name=PDSF, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000]), (CompNode [id=2, name=PDSF, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000],CompNode [id=1, name=RCF, isInputSource=true, isOutputDestination=true, isInputDestination=true, isOutputSource=true, inputWeight=1000]), (CompNode [id=1, name=RCF, isInputSource=true, isOutputDestination=true, isInputDestination=true, isOutputSource=true, inputWeight=1000],CompNode [id=3, name=ANL, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000]), (CompNode [id=3, name=ANL, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000],CompNode [id=1, name=RCF, isInputSource=true, isOutputDestination=true, isInputDestination=true, isOutputSource=true, inputWeight=1000]), (CompNode [id=1, name=RCF, isInputSource=true, isOutputDestination=true, isInputDestination=true, isOutputSource=true, inputWeight=1000],CompNode [id=4, name=KISTI, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000]), (CompNode [id=4, name=KISTI, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000],CompNode [id=1, name=RCF, isInputSource=true, isOutputDestination=true, isInputDestination=true, isOutputSource=true, inputWeight=1000]), (CompNode [id=2, name=PDSF, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000],CompNode [id=3, name=ANL, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000]), (CompNode [id=3, name=ANL, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000],CompNode [id=2, name=PDSF, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000]), (CompNode [id=2, name=PDSF, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000],CompNode [id=4, name=KISTI, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000]), (CompNode [id=4, name=KISTI, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000],CompNode [id=2, name=PDSF, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000]), (CompNode [id=3, name=ANL, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000],CompNode [id=4, name=KISTI, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000]), (CompNode [id=4, name=KISTI, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000],CompNode [id=3, name=ANL, isInputSource=false, isOutputDestination=false, isInputDestination=true, isOutputSource=true, inputWeight=1000])])
+Feb 09, 2015 9:02:05 PM networkflows.planner.DataProductionPlanner ReadLinksFromFile
+INFO: Reading links file is finished

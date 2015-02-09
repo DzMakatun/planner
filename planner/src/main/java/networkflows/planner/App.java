@@ -38,12 +38,12 @@ public final class App
         long stopTime = System.currentTimeMillis();
         long elapsedTime = stopTime - startTime;
         planner.PrintGridSetup();
-        if (planner.GridIsCostintent()){
-        	System.out.println("Grid passed the consistency check");
-        }else{
-        	System.out.println("Grid is inconsistent");
-        }
-        planner.ConstructGrid();
+        //if (planner.GridIsCostintent()){
+        //	System.out.println("Grid passed the consistency check");
+        //}else{
+        //	System.out.println("Grid is inconsistent");
+        //}
+        //planner.ConstructGrid();
         System.out.println("Elapsed time in ms: " + elapsedTime);
         
     	

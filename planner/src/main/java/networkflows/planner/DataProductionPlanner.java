@@ -19,14 +19,14 @@ import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 import au.com.bytecode.opencsv.CSVReader;
 
 public class DataProductionPlanner {
-	private Set<CompNode> nodes = new LinkedHashSet<CompNode>();
-	private Set<NetworkLink> links = new LinkedHashSet<NetworkLink>();
+	//private Set<CompNode> nodes = new LinkedHashSet<CompNode>();
+	//private Set<NetworkLink> links = new LinkedHashSet<NetworkLink>();
 	
 	//add logger
 	private static final Logger logger = Logger.getLogger( DataProductionPlanner.class.getName() );
 	private static FileHandler fh;
 	private static SimpleFormatter formatter;
-	private SimpleDirectedWeightedGraph<CompNode, DefaultWeightedEdge> grid;
+	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> grid = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
 	
 	
 	//constructor
@@ -52,30 +52,26 @@ public class DataProductionPlanner {
 		try {
             //Get the CSVReader instance with specifying the delimiter to be used
 			reader = new CSVReader(new FileReader(nodesFileName),',');
-			try {
-	            String [] nextLine;
-	            //Read one line at a time
-	            while ((nextLine = reader.readNext()) != null){
-	            	if (nextLine[0].charAt(0) != '#'){//skip commented lines	            	
-		            	CompNode node = new CompNode(nextLine);
-		            	if (this.nodes.contains(node)){
-		            		DataProductionPlanner.logger.log( Level.WARNING, "Dublicated nodes (a row in the intup file is skipped): "+node.toString());
-		            		
-		            	}else{
-		            		this.nodes.add(node);
-			            	DataProductionPlanner.logger.log( Level.FINEST, "Node red from file: "+node.toString());
-		            	}
-		            	
-	            	}
-	            }
-	            DataProductionPlanner.logger.log( Level.INFO, "Nodes were red successfully");
+			String [] nextLine;        
+	        while ((nextLine = reader.readNext()) != null){ //Read one line at a time
+	            if (nextLine[0].length()>0 && nextLine[0].charAt(0) != '#'){//skip commented and empty lines
+	            		try {
+			            	CompNode node = new CompNode(nextLine);
+			            	if (this.grid.addVertex(node)){ //if node added successfully 
+			            		DataProductionPlanner.logger.log( Level.FINEST, "Node red from file: "+node.toString());            					            		
+			            	}else{ //if node adding failled
+			            		DataProductionPlanner.logger.log( Level.WARNING, "Dublicated nodes in the nodes file (line skipped): "+node.toString());				            	
+			            	}
+	            		}catch (Exception e) {
+	        	            //e.printStackTrace();
+	        	            DataProductionPlanner.logger.log( Level.WARNING, "Failed to read node record from the nodes file (line skipped): " + nodesFileName + " " + e.getMessage());
+	        	            continue;
+	        	        }		            	
+	            }	            
 	        }
-	        catch (Exception e) {
-	            e.printStackTrace();
-	            DataProductionPlanner.logger.log( Level.SEVERE, "Error while reading the nodes file : " + nodesFileName + " " + e.getMessage());
-	        }			
-        }
-		catch (Exception e){
+	        reader.close();
+            DataProductionPlanner.logger.log( Level.INFO, "Reading nodes file is finished");
+        }catch (Exception e){
 			 e.printStackTrace();
 	         DataProductionPlanner.logger.log( Level.SEVERE, "Failed to read nodes file: "+ nodesFileName);
 		}	
@@ -85,37 +81,35 @@ public class DataProductionPlanner {
 	public void ReadLinksFromFile(String linksFileName){
 		DataProductionPlanner.logger.log( Level.INFO, "Reading links from file: "+ linksFileName);
 		CSVReader reader = null;
+		CompNode bnode, enode; //temporary nodes for begin and end nodes of a link
 		try {
             //Get the CSVReader instance with specifying the delimiter to be used
 			reader = new CSVReader(new FileReader(linksFileName),',');
-			try {
-	            String [] nextLine;
-	            //Read one line at a time
-	            while ((nextLine = reader.readNext()) != null){
-	            	if (nextLine[0].charAt(0) != '#'){//skip commented lines	            	
-		            	NetworkLink link = new NetworkLink(nextLine);
-		            	if (this.links.contains(link)){ // skip links with same id's
-		            		DataProductionPlanner.logger.log( Level.WARNING, "Dublicated links (a row in the intup file is skipped): "+link.toString());
-		            		
+	        String [] nextLine;
+	        //Read one line at a time
+	        while ((nextLine = reader.readNext()) != null){
+	            if (nextLine[0].length()>0 && nextLine[0].charAt(0) != '#'){//skip commented and empty lines
+	            	try {
+		            	NetworkLink link = new NetworkLink(nextLine); //throws exception if wrong string format
+		            	bnode = getNode(link.getBeginNodeId());
+            			enode = getNode(link.getEndNodeId());
+		            	if (bnode!=null && enode!=null && this.grid.addEdge(bnode,enode,link)){ // this skips links with same id's or missing nodes
+		            		//link is valid and unique        			
+		            		 this.grid.setEdgeWeight(link, link.getBandwidth());
+			            	 //this.links.add(link);
+			            	 DataProductionPlanner.logger.log( Level.FINEST, "Link red from file: " + link.toString());		            		
 		            	}else{
-		            		if (!this.LinkIsValid(link)){// begin or end nodes are missing
-		            			DataProductionPlanner.logger.log( Level.WARNING, "Begin/end nodes of a link are missing (a row in the intup file is skipped): "+link.toString());
-		            		}else{ //link is valid and unique
-			            		this.links.add(link);
-			            		DataProductionPlanner.logger.log( Level.FINEST, "Link red from file: " + link.toString());
-		            		}
-
+		            		 DataProductionPlanner.logger.log( Level.WARNING, "Duplicated link or missing nodes (line skipped): "+link.toString()); 
 		            	}
-	            	}
+	            	}catch (Exception e) {
+	     	            //e.printStackTrace();
+	     	            DataProductionPlanner.logger.log( Level.WARNING, "Error while reading the links file (line skipped): " + linksFileName + " " + e.getMessage());
+	     	        }				
 	            }
-	            DataProductionPlanner.logger.log( Level.INFO, "Links were red successfully");
 	        }
-	        catch (Exception e) {
-	            e.printStackTrace();
-	            DataProductionPlanner.logger.log( Level.SEVERE, "Error while reading the links file : " + linksFileName + " " + e.getMessage());
-	        }			
-        }
-		catch (Exception e){
+	        reader.close();
+	        DataProductionPlanner.logger.log( Level.INFO, "Reading links file is finished");	       
+        }catch (Exception e){ //if failed to read file
 			 e.printStackTrace();
 	         DataProductionPlanner.logger.log( Level.SEVERE, "Failed to read links file: "+ linksFileName);
 		}	
@@ -124,12 +118,12 @@ public class DataProductionPlanner {
 	public void PrintGridSetup(){
 		System.out.println("--------------------GRID SETUP-------------------------");
 		System.out.println("NODES: ");		
-		for (CompNode node: this.nodes){
+		for (CompNode node: this.grid.vertexSet()){
 			System.out.println(node.toString());
 		}
 		System.out.println("");	
 		System.out.println("Links: ");	
-		for (NetworkLink link: this.links){
+		for (NetworkLink link: this.grid.edgeSet()){
 			System.out.println(link.toString());
 		}
 		System.out.println("-------------------------------------------------------");
@@ -139,14 +133,14 @@ public class DataProductionPlanner {
 	}
 	
 	public String GridSummarystring(){
-		int numberOfNodes = this.nodes.size();
-		int numberOfLinks = this.links.size();
+		int numberOfNodes = this.grid.vertexSet().size();
+		int numberOfLinks = this.grid.edgeSet().size();
 		int numberOfInputSources = 0;
 		int numberOfOutputDestinations = 0;
 		int numberOfInputDestinations = 0;
 		int numberOfOutputSources = 0;
 		
-		for (CompNode node: this.nodes){
+		for (CompNode node: this.grid.vertexSet()){
 			if (node.isInputSource()){numberOfInputSources++;}
 			if (node.isOutputDestination()){numberOfOutputDestinations++;}
 			if (node.isInputDestination()){numberOfInputDestinations++;}
@@ -169,31 +163,22 @@ public class DataProductionPlanner {
 	}
 	
 	public boolean GridIsCostintent(){
-		for (NetworkLink link: this.links){
+		/*for (NetworkLink link: this.links){
 			CompNode bnode = new CompNode(link.getBeginNodeId(), "Bsearch",false,false,false,false,1);
 			CompNode enode = new CompNode(link.getEndNodeId(), "Bsearch",false,false,false,false,1);
 			if ( !( this.nodes.contains(bnode) && this.nodes.contains(enode) ) ){
 				DataProductionPlanner.logger.log( Level.SEVERE, "Unconsistent Gid setup, link from/to missing node: " + link.toString());
 				return false;
 			}		
-		}			
+		}*/		
+		DataProductionPlanner.logger.log( Level.WARNING, "The method GridIsCostintent() is checking nothing so far");
 		return true;
 	}
 
-	private boolean LinkIsValid(NetworkLink link){
-		CompNode bnode = new CompNode(link.getBeginNodeId(), "Bsearch",false,false,false,false,1);
-		CompNode enode = new CompNode(link.getEndNodeId(), "Bsearch",false,false,false,false,1);
-		if ( !( this.nodes.contains(bnode) && this.nodes.contains(enode) ) ){
-			DataProductionPlanner.logger.log( Level.SEVERE, "Unconsistent Gid setup, link from/to missing node: " + link.toString());
-			return false;
-		}else{
-			return true;
-		}
-	}
 	
 	//search node by id
 	private CompNode getNode(int id){
-		for (CompNode node: this.nodes){
+		for (CompNode node: this.grid.vertexSet()){
 			if (node.getId() == id){
 				return node;
 			}
@@ -201,20 +186,4 @@ public class DataProductionPlanner {
 		return null;
 	}
 	
-	public void ConstructGrid(){
-		this.grid = new SimpleDirectedWeightedGraph<CompNode, DefaultWeightedEdge>(DefaultWeightedEdge.class);
-		for (CompNode node: this.nodes){
-		this.grid.addVertex(node);
-		}
-		for (NetworkLink link: this.links){
-			DefaultWeightedEdge e = new DefaultWeightedEdge();
-			CompNode bnode = getNode(link.getBeginNodeId());
-			CompNode enode = getNode(link.getEndNodeId());
-			this.grid.addEdge(bnode,enode,e);
-			this.grid.setEdgeWeight(e, link.getBandwidth());
-			}
-		DataProductionPlanner.logger.log( Level.INFO, "Grid graph created" + grid.toString());
-		//System.out.println(grid.toString());
-	}
-
 }

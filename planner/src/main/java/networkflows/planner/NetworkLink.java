@@ -4,12 +4,17 @@
 package networkflows.planner;
 
 import java.io.IOException;
+import org.jgrapht.graph.DefaultWeightedEdge;
 
 /**
  * @author Dima
  *
  */
-public class NetworkLink {
+public class NetworkLink extends DefaultWeightedEdge{
+	/**
+	 * 
+	 */
+	
 	private int id;
 	private String name;	
 	private int beginNodeId;
@@ -19,6 +24,7 @@ public class NetworkLink {
 	//constructor
 	public NetworkLink(int id, String name, int beginNodeId, int endNodeId,
 			int bandwidth) {
+		super();
 		this.id = id;
 		this.name = name;
 		this.beginNodeId = beginNodeId;
@@ -28,10 +34,10 @@ public class NetworkLink {
 
 	//constructor from string
 	public NetworkLink(String [] row) throws IOException {
+		super();
 		if (row.length != 5) {  //check number of records for each link
     		throw new IOException("Wrong number of parameters (format missmatch) in a row.");
     	}
-
 		this.id = Integer.parseInt(row[0]);
 		this.name = row[1];
 		this.beginNodeId = Integer.parseInt(row[2]);
