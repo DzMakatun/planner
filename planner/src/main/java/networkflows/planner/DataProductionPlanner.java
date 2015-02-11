@@ -1,5 +1,6 @@
 package networkflows.planner;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.util.logging.FileHandler;
@@ -7,7 +8,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.jgrapht.*;
@@ -15,6 +18,7 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleDirectedWeightedGraph;
+import org.jgrapht.ext.*;
 
 import au.com.bytecode.opencsv.CSVReader;
 
@@ -184,6 +188,24 @@ public class DataProductionPlanner {
 			}
 		}
 		return null;
+	}
+	
+	public void WriteGridODT(String outputFilename){
+		NodeIdProvider nodeIds=new NodeIdProvider(); //node ids correspond to those in input file
+		NodeNameProvider nodeNames=new NodeNameProvider(); //node names correspond to those in input file
+		LinkNameProvider linkNames = new LinkNameProvider(); //link names are ids + name  from input file
+		NodeAttributeProvider nodeAttributes = new NodeAttributeProvider(); //attributes for nodes
+		LinkAttributeProvider linkAttributes = new LinkAttributeProvider(); //attributes for links
+	    DOTExporter<CompNode, NetworkLink> export=new DOTExporter<CompNode, NetworkLink>(nodeIds, nodeNames, linkNames, nodeAttributes, linkAttributes);
+	    
+	    //DOTExporter<CompNode, NetworkLink> export=new DOTExporter<CompNode, NetworkLink>();
+	    try {
+	        export.export(new FileWriter(outputFilename), this.grid);
+	        DataProductionPlanner.logger.log( Level.INFO, "Grid graph was written to file" + outputFilename);
+	    }catch (IOException e){
+	    	e.printStackTrace();
+	    	DataProductionPlanner.logger.log( Level.WARNING, "Failed to write output file" + outputFilename + " " + e.getMessage());
+	    }
 	}
 	
 }
