@@ -18,9 +18,32 @@ public class CompNode {
 	private boolean isOutputDestination; 	//true for the central storage	
 	private boolean isInputDestination;		//true for the processing nodes
 	private boolean isOutputSource;			//true for the processing nodes
-
+	
+	private boolean isDummy;
+	
 	private int inputWeight;				//weight (bandwidth) for the input transfer problem	
+	private int outputWeight;				//weight (bandwidth) for the output transfer problem	
+	
+	private int inputCanProvide;				//for the central storage amount of input data that can be transferred
+	private int outputCanStore;					//for the central storage amount of output data that can be accommodated
+	private int incomingInputFlow;
+	private int outgoingInputFlow;
+	private int outgoingOutputFlow;
+	private int incomingOutputFlow;
+	
+	
+	
+	public int getOutputWeight(int deltaT) {
+		return outputWeight;
+	}
 
+	public int getInputCanProvide() {
+		return inputCanProvide;
+	}
+
+	public int getOutputCanStore() {
+		return outputCanStore;
+	}
 
 	public int getId() {
 		return id;
@@ -46,14 +69,14 @@ public class CompNode {
 		return isOutputSource;
 	}
 
-	public int getInputWeight() {
+	public int getInputWeight(int deltaT) {
 		return inputWeight;
 	}
 	
 	//constructor
 	public CompNode(int id, String name, boolean isInputSource,
 			boolean isOutputDestination, boolean isInputDestination,
-			boolean isOutputSource, int inputWeight) {
+			boolean isOutputSource, int inputWeight, boolean isDummy) {
 		this.id = id;
 		this.name = name;
 		this.isInputSource = isInputSource;
@@ -61,6 +84,13 @@ public class CompNode {
 		this.isInputDestination = isInputDestination;
 		this.isOutputSource = isOutputSource;
 		this.inputWeight = inputWeight;
+		this.isDummy = isDummy;
+		
+		//TO DO
+		this.outputWeight = this.inputWeight;			//weight (bandwidth) for the output transfer problem			
+		this.inputCanProvide = 0;				//for the central storage amount of input data that can be transferred
+		this.outputCanStore = 0;				
+		
 	}
 
 	public CompNode(String [] row) throws IOException {
@@ -75,6 +105,12 @@ public class CompNode {
 		this.isInputDestination = Boolean.valueOf(row[4]);
 		this.isOutputSource = Boolean.valueOf(row[5]);
 		this.inputWeight = Integer.parseInt(row[6]);
+		this.isDummy = false;
+		
+		//TO DO
+		this.outputWeight = this.inputWeight;			//weight (bandwidth) for the output transfer problem			
+		this.inputCanProvide = 10;				//for the central storage amount of input data that can be transferred
+		this.outputCanStore = 10;				
 	}
 	
 	@Override
@@ -105,6 +141,11 @@ public class CompNode {
     public int hashCode() {
         return this.id;
     }
+
+	public boolean isDummy() {
+		// TODO Auto-generated method stub
+		return this.isDummy;
+	}
 
 
 }

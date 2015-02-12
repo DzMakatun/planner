@@ -12,6 +12,7 @@ public class NodeAttributeProvider implements ComponentAttributeProvider<CompNod
         map.put("isOutputDestination", Boolean.toString(node.isOutputDestination()));
         map.put("isInputDestination", Boolean.toString(node.isInputDestination()));           
         map.put("isOutputSource", Boolean.toString(node.isOutputSource()));
+        map.put("isDummy", Boolean.toString(node.isDummy()));
         return map;
     }
 

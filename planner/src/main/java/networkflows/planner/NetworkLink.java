@@ -20,16 +20,20 @@ public class NetworkLink extends DefaultWeightedEdge{
 	private int beginNodeId;
 	private int endNodeId;	
 	private int bandwidth;
+	private int inputFlow;
+	private int outputFlow;
+	private boolean isDummy;
 	
 	//constructor
 	public NetworkLink(int id, String name, int beginNodeId, int endNodeId,
-			int bandwidth) {
+			int bandwidth, boolean isDummy) {
 		super();
 		this.id = id;
 		this.name = name;
 		this.beginNodeId = beginNodeId;
 		this.endNodeId = endNodeId;
 		this.bandwidth = bandwidth;
+		this.isDummy = isDummy;
 	}
 
 	//constructor from string
@@ -43,6 +47,7 @@ public class NetworkLink extends DefaultWeightedEdge{
 		this.beginNodeId = Integer.parseInt(row[2]);
 		this.endNodeId = Integer.parseInt(row[3]);
 		this.bandwidth = Integer.parseInt(row[4]);
+		this.isDummy = false;
 	}
 
 	@Override
@@ -70,6 +75,19 @@ public class NetworkLink extends DefaultWeightedEdge{
 
 	public int getBandwidth() {
 		return bandwidth;
+	}
+	
+	public int getOutputWeight(int deltaT) {
+		return this.bandwidth * deltaT;
+	}
+	
+	public int getInputWeight(int deltaT) {
+		return this.bandwidth * deltaT - this.outputFlow; //decrease bandwidth by value used by output flow
+	}
+	
+	public boolean isDummy() {
+		// TODO Auto-generated method stub
+		return this.isDummy;
 	}
 	
 	//comparison of two links

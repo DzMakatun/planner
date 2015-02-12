@@ -31,7 +31,18 @@ public class DataProductionPlanner {
 	private static FileHandler fh;
 	private static SimpleFormatter formatter;
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> grid = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
+	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> inputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
+	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> outputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
 	
+	//for exports to .dot file
+	private static NodeIdProvider nodeIds=new NodeIdProvider(); //node ids correspond to those in input file
+	private static NodeNameProvider nodeNames=new NodeNameProvider(); //node names correspond to those in input file
+	private static LinkNameProvider linkNames = new LinkNameProvider(); //link names are ids + name  from input file
+	private static NodeAttributeProvider nodeAttributes = new NodeAttributeProvider(); //attributes for nodes
+	
+	//solution parameters
+	private int deltaT = 2;
+	private double beta = 1.0;
 	
 	//constructor
 	public DataProductionPlanner() { 
@@ -191,21 +202,121 @@ public class DataProductionPlanner {
 	}
 	
 	public void WriteGridODT(String outputFilename){
-		NodeIdProvider nodeIds=new NodeIdProvider(); //node ids correspond to those in input file
-		NodeNameProvider nodeNames=new NodeNameProvider(); //node names correspond to those in input file
-		LinkNameProvider linkNames = new LinkNameProvider(); //link names are ids + name  from input file
-		NodeAttributeProvider nodeAttributes = new NodeAttributeProvider(); //attributes for nodes
-		LinkAttributeProvider linkAttributes = new LinkAttributeProvider(); //attributes for links
+		this.WriteODT(this.grid, outputFilename);
+		
+	}
+	
+	public void WriteInputNetworkODT(String outputFilename){
+		this.WriteODT(this.inputNetwork, outputFilename);
+		
+	}
+	
+	public void WriteOutputNetworkODT(String outputFilename){
+		this.WriteODT(this.outputNetwork, outputFilename);
+		
+	}
+	
+	// Write any graph to odt
+	public void WriteODT(SimpleDirectedWeightedGraph<CompNode, NetworkLink> g ,String outputFilename){
+		LinkAttributeProvider linkAttributes = new LinkAttributeProvider(g); //attributes for links. Is separete because we can get real weights from graph only
 	    DOTExporter<CompNode, NetworkLink> export=new DOTExporter<CompNode, NetworkLink>(nodeIds, nodeNames, linkNames, nodeAttributes, linkAttributes);
 	    
 	    //DOTExporter<CompNode, NetworkLink> export=new DOTExporter<CompNode, NetworkLink>();
 	    try {
-	        export.export(new FileWriter(outputFilename), this.grid);
-	        DataProductionPlanner.logger.log( Level.INFO, "Grid graph was written to file" + outputFilename);
+	        export.export(new FileWriter(outputFilename), g);
+	        DataProductionPlanner.logger.log( Level.INFO, "Graph was written to file" + outputFilename);
 	    }catch (IOException e){
 	    	e.printStackTrace();
 	    	DataProductionPlanner.logger.log( Level.WARNING, "Failed to write output file" + outputFilename + " " + e.getMessage());
 	    }
+	}
+	
+	public void CreateInputNetwork(){
+		DataProductionPlanner.logger.log( Level.INFO, "Creating input network");
+		CompNode source = new CompNode(Integer.MAX_VALUE, "Dummy Source", false, false, false, false, 0, true);
+		CompNode sink = new CompNode(Integer.MAX_VALUE -1 , "Dummy Sink", false, false, false, false, 0, true);
+		NetworkLink dummyEdgeQ, dummyEdgeD;		
+		this.inputNetwork.addVertex(source);
+		this.inputNetwork.addVertex(sink);
+		int i = Integer.MAX_VALUE; //link id iterator
+		
+		//add nodes and dummy edges to network
+		for (CompNode node: this.grid.vertexSet()){
+			this.inputNetwork.addVertex(node);
+			if (node.isInputSource()){
+				dummyEdgeQ = new NetworkLink(i--, "dummy edge Q", source.getId(), node.getId(), 0, true);
+				this.inputNetwork.addEdge(source, node, dummyEdgeQ); //dummy edge from source to input storage	
+				this.inputNetwork.setEdgeWeight(dummyEdgeQ, node.getInputCanProvide());
+				
+			}
+			if (node.isInputDestination()){
+				dummyEdgeD = new NetworkLink(i--, "dummy edge D", node.getId(), sink.getId(), 0, true);
+				this.inputNetwork.addEdge(node, sink, dummyEdgeD); //dummy edge from processing node to sink			
+				this.inputNetwork.setEdgeWeight(dummyEdgeD, node.getInputWeight(this.deltaT));
+			}	
+		}
+		
+		//add real network links to the network
+		CompNode bnode, enode; //temporary nodes for begin and end nodes of a link
+		for (NetworkLink link: this.grid.edgeSet()){
+			bnode = getNode(link.getBeginNodeId());
+			enode = getNode(link.getEndNodeId());
+			this.inputNetwork.addEdge(bnode, enode, link);
+			this.inputNetwork.setEdgeWeight(link, link.getInputWeight(this.deltaT)); //edge weight equals to Bandwidth * timeInteerval - output flow
+		}
+		System.out.println("INPUT NETWORK SETUP");	
+		this.PrintNetworkSetup(this.inputNetwork);		
+	}
+	
+	
+	public void CreateOutputNetwork(){
+		DataProductionPlanner.logger.log( Level.INFO, "Creating output network");
+		CompNode source = new CompNode(Integer.MAX_VALUE, "Dummy Source", false, false, false, false, 0, true);
+		CompNode sink = new CompNode(Integer.MAX_VALUE -1 , "Dummy Sink", false, false, false, false, 0, true);
+		NetworkLink dummyEdgeQ, dummyEdgeD;		
+		this.outputNetwork.addVertex(source);
+		this.outputNetwork.addVertex(sink);
+		int i = Integer.MAX_VALUE; //link id iterator
+		
+		//add nodes and dummy edges to network
+		for (CompNode node: this.grid.vertexSet()){
+			this.outputNetwork.addVertex(node);
+			if (node.isOutputDestination()){
+				dummyEdgeQ = new NetworkLink(i--, "dummy edge Q", node.getId(), sink.getId(), 0, true); //edge from output destination to dummy sink
+				this.outputNetwork.addEdge(node, sink, dummyEdgeQ); 	
+				this.outputNetwork.setEdgeWeight(dummyEdgeQ, node.getOutputCanStore());				
+			}
+			if (node.isOutputSource()){
+				dummyEdgeD = new NetworkLink(i--, "dummy edge D",source.getId(), node.getId(), 0, true); //dummy edge from source to processing node
+				this.outputNetwork.addEdge(source, node, dummyEdgeD); 		
+				this.outputNetwork.setEdgeWeight(dummyEdgeD, node.getOutputWeight(this.deltaT));
+			}	
+		}
+		
+		//add real network links to the network
+		CompNode bnode, enode; //temporary nodes for begin and end nodes of a link
+		for (NetworkLink link: this.grid.edgeSet()){
+			bnode = getNode(link.getBeginNodeId());
+			enode = getNode(link.getEndNodeId());
+			this.outputNetwork.addEdge(bnode, enode, link);
+			this.outputNetwork.setEdgeWeight(link, link.getOutputWeight(this.deltaT)); //edge weight equals to Bandwidth * timeInteerval
+		}
+		System.out.println("OUTPUT NETWORK SETUP");	
+		this.PrintNetworkSetup(this.outputNetwork);		
+	}
+	
+	public void PrintNetworkSetup(SimpleDirectedWeightedGraph<CompNode, NetworkLink> g){
+		System.out.println("~~~~~~~~~~~~~~~~~~~~~~~NETWORK SETUP~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		System.out.println("VERTEXES: ");		
+		for (CompNode node: g.vertexSet()){
+			System.out.println(node.toString());
+		}
+		System.out.println("");	
+		System.out.println("EDGES: ");	
+		for (NetworkLink link: g.edgeSet()){
+			System.out.println(link.toString()+" weight " + g.getEdgeWeight(link));
+		}
+		System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 	}
 	
 }
