@@ -40,6 +40,7 @@ public final class App
         planner.PrintGridSetup();
         planner.WriteGridODT("output/grid.dot");
         planner.CreateOutputNetwork();
+        planner.SolveOutputProblem();
         planner.WriteOutputNetworkODT("output/outputNetwork.dot");
         planner.CreateInputNetwork();
         planner.WriteInputNetworkODT("output/inputNetwork.dot");

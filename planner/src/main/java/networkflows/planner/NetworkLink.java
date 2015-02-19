@@ -4,6 +4,7 @@
 package networkflows.planner;
 
 import java.io.IOException;
+
 import org.jgrapht.graph.DefaultWeightedEdge;
 
 /**
@@ -20,8 +21,25 @@ public class NetworkLink extends DefaultWeightedEdge{
 	private int beginNodeId;
 	private int endNodeId;	
 	private int bandwidth;
-	private int inputFlow;
-	private int outputFlow;
+	private double inputFlow;
+	private double outputFlow;
+	
+	public double getInputFlow() {
+		return inputFlow;
+	}
+
+	public void setInputFlow(double inputFlow) {
+		this.inputFlow = inputFlow;
+	}
+
+	public double getOutputFlow() {
+		return outputFlow;
+	}
+
+	public void setOutputFlow(double double1) {
+		this.outputFlow = double1;
+	}
+
 	private boolean isDummy;
 	
 	//constructor
@@ -54,7 +72,7 @@ public class NetworkLink extends DefaultWeightedEdge{
 	public String toString() {
 		return "NetworkLink [id=" + id + ", name=" + name + ", beginNodeId="
 				+ beginNodeId + ", endNodeId=" + endNodeId + ", bandwidth="
-				+ bandwidth + "]";
+				+ bandwidth + ", outputFlow=" + this.outputFlow + "]";
 	}
 
 	public int getId() {
@@ -82,7 +100,7 @@ public class NetworkLink extends DefaultWeightedEdge{
 	}
 	
 	public int getInputWeight(int deltaT) {
-		return this.bandwidth * deltaT - this.outputFlow; //decrease bandwidth by value used by output flow
+		return this.bandwidth * deltaT - (int) this.outputFlow; //decrease bandwidth by value used by output flow
 	}
 	
 	public boolean isDummy() {

@@ -18,6 +18,7 @@ import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleDirectedWeightedGraph;
+import org.jgrapht.alg.EdmondsKarpMaximumFlow;
 import org.jgrapht.ext.*;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -30,10 +31,12 @@ public class DataProductionPlanner {
 	private static final Logger logger = Logger.getLogger( DataProductionPlanner.class.getName() );
 	private static FileHandler fh;
 	private static SimpleFormatter formatter;
+	
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> grid = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> inputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> outputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
-	
+	private CompNode source = new CompNode(Integer.MAX_VALUE, "Dummy Source", false, false, false, false, 0, true);
+	private CompNode sink = new CompNode(Integer.MAX_VALUE -1 , "Dummy Sink", false, false, false, false, 0, true);
 	//for exports to .dot file
 	private static NodeIdProvider nodeIds=new NodeIdProvider(); //node ids correspond to those in input file
 	private static NodeNameProvider nodeNames=new NodeNameProvider(); //node names correspond to those in input file
@@ -233,25 +236,22 @@ public class DataProductionPlanner {
 	
 	public void CreateInputNetwork(){
 		DataProductionPlanner.logger.log( Level.INFO, "Creating input network");
-		CompNode source = new CompNode(Integer.MAX_VALUE, "Dummy Source", false, false, false, false, 0, true);
-		CompNode sink = new CompNode(Integer.MAX_VALUE -1 , "Dummy Sink", false, false, false, false, 0, true);
 		NetworkLink dummyEdgeQ, dummyEdgeD;		
-		this.inputNetwork.addVertex(source);
-		this.inputNetwork.addVertex(sink);
-		int i = Integer.MAX_VALUE; //link id iterator
-		
+		this.inputNetwork.addVertex(this.source);
+		this.inputNetwork.addVertex(this.sink);
+		int i = Integer.MAX_VALUE; //link id iterator		
 		//add nodes and dummy edges to network
 		for (CompNode node: this.grid.vertexSet()){
 			this.inputNetwork.addVertex(node);
 			if (node.isInputSource()){
-				dummyEdgeQ = new NetworkLink(i--, "dummy edge Q", source.getId(), node.getId(), 0, true);
-				this.inputNetwork.addEdge(source, node, dummyEdgeQ); //dummy edge from source to input storage	
+				dummyEdgeQ = new NetworkLink(i--, "dummy edge Q", this.source.getId(), node.getId(), 0, true);
+				this.inputNetwork.addEdge(this.source, node, dummyEdgeQ); //dummy edge from source to input storage	
 				this.inputNetwork.setEdgeWeight(dummyEdgeQ, node.getInputCanProvide());
 				
 			}
 			if (node.isInputDestination()){
-				dummyEdgeD = new NetworkLink(i--, "dummy edge D", node.getId(), sink.getId(), 0, true);
-				this.inputNetwork.addEdge(node, sink, dummyEdgeD); //dummy edge from processing node to sink			
+				dummyEdgeD = new NetworkLink(i--, "dummy edge D", node.getId(), this.sink.getId(), 0, true);
+				this.inputNetwork.addEdge(node, this.sink, dummyEdgeD); //dummy edge from processing node to sink			
 				this.inputNetwork.setEdgeWeight(dummyEdgeD, node.getInputWeight(this.deltaT));
 			}	
 		}
@@ -271,24 +271,22 @@ public class DataProductionPlanner {
 	
 	public void CreateOutputNetwork(){
 		DataProductionPlanner.logger.log( Level.INFO, "Creating output network");
-		CompNode source = new CompNode(Integer.MAX_VALUE, "Dummy Source", false, false, false, false, 0, true);
-		CompNode sink = new CompNode(Integer.MAX_VALUE -1 , "Dummy Sink", false, false, false, false, 0, true);
 		NetworkLink dummyEdgeQ, dummyEdgeD;		
-		this.outputNetwork.addVertex(source);
-		this.outputNetwork.addVertex(sink);
+		this.outputNetwork.addVertex(this.source);
+		this.outputNetwork.addVertex(this.sink);
 		int i = Integer.MAX_VALUE; //link id iterator
 		
 		//add nodes and dummy edges to network
 		for (CompNode node: this.grid.vertexSet()){
 			this.outputNetwork.addVertex(node);
 			if (node.isOutputDestination()){
-				dummyEdgeQ = new NetworkLink(i--, "dummy edge Q", node.getId(), sink.getId(), 0, true); //edge from output destination to dummy sink
-				this.outputNetwork.addEdge(node, sink, dummyEdgeQ); 	
+				dummyEdgeQ = new NetworkLink(i--, "dummy edge Q", node.getId(), this.sink.getId(), 0, true); //edge from output destination to dummy sink
+				this.outputNetwork.addEdge(node, this.sink, dummyEdgeQ); 	
 				this.outputNetwork.setEdgeWeight(dummyEdgeQ, node.getOutputCanStore());				
 			}
 			if (node.isOutputSource()){
-				dummyEdgeD = new NetworkLink(i--, "dummy edge D",source.getId(), node.getId(), 0, true); //dummy edge from source to processing node
-				this.outputNetwork.addEdge(source, node, dummyEdgeD); 		
+				dummyEdgeD = new NetworkLink(i--, "dummy edge D",this.source.getId(), node.getId(), 0, true); //dummy edge from source to processing node
+				this.outputNetwork.addEdge(this.source, node, dummyEdgeD); 		
 				this.outputNetwork.setEdgeWeight(dummyEdgeD, node.getOutputWeight(this.deltaT));
 			}	
 		}
@@ -303,6 +301,19 @@ public class DataProductionPlanner {
 		}
 		System.out.println("OUTPUT NETWORK SETUP");	
 		this.PrintNetworkSetup(this.outputNetwork);		
+	}
+	
+	public void SolveOutputProblem(){
+		DataProductionPlanner.logger.log( Level.INFO, "Solving output problem");
+		EdmondsKarpMaximumFlow<CompNode,NetworkLink> solver = new EdmondsKarpMaximumFlow<CompNode,NetworkLink>(this.outputNetwork);
+		solver.calculateMaximumFlow(this.source, this.sink);
+		DataProductionPlanner.logger.log( Level.INFO, "Solved: output flow value is: " + solver.getMaximumFlowValue());
+		Map<NetworkLink,Double> solution = solver.getMaximumFlow();
+		for(NetworkLink edge: this.outputNetwork.edgeSet()){
+			edge.setOutputFlow(solution.get(edge));			
+		}
+		this.PrintNetworkSetup(this.outputNetwork);
+		
 	}
 	
 	public void PrintNetworkSetup(SimpleDirectedWeightedGraph<CompNode, NetworkLink> g){
