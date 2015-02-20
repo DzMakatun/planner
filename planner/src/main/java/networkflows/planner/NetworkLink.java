@@ -18,33 +18,19 @@ public class NetworkLink extends DefaultWeightedEdge{
 	
 	private int id;
 	private String name;	
+	private boolean isDummy;
 	private int beginNodeId;
 	private int endNodeId;	
-	private int bandwidth;
+	private double bandwidth;
+	
 	private double inputFlow;
 	private double outputFlow;
 	
-	public double getInputFlow() {
-		return inputFlow;
-	}
-
-	public void setInputFlow(double inputFlow) {
-		this.inputFlow = inputFlow;
-	}
-
-	public double getOutputFlow() {
-		return outputFlow;
-	}
-
-	public void setOutputFlow(double double1) {
-		this.outputFlow = double1;
-	}
-
-	private boolean isDummy;
+	
 	
 	//constructor
 	public NetworkLink(int id, String name, int beginNodeId, int endNodeId,
-			int bandwidth, boolean isDummy) {
+			double bandwidth, boolean isDummy) {
 		super();
 		this.id = id;
 		this.name = name;
@@ -53,7 +39,7 @@ public class NetworkLink extends DefaultWeightedEdge{
 		this.bandwidth = bandwidth;
 		this.isDummy = isDummy;
 	}
-
+	
 	//constructor from string
 	public NetworkLink(String [] row) throws IOException {
 		super();
@@ -64,48 +50,37 @@ public class NetworkLink extends DefaultWeightedEdge{
 		this.name = row[1];
 		this.beginNodeId = Integer.parseInt(row[2]);
 		this.endNodeId = Integer.parseInt(row[3]);
-		this.bandwidth = Integer.parseInt(row[4]);
+		this.bandwidth = Double.parseDouble(row[4]);
 		this.isDummy = false;
 	}
 
 	@Override
 	public String toString() {
-		return "NetworkLink [id=" + id + ", name=" + name + ", beginNodeId="
-				+ beginNodeId + ", endNodeId=" + endNodeId + ", bandwidth="
-				+ bandwidth + ", outputFlow=" + this.outputFlow + "]";
-	}
-
-	public int getId() {
-		return id;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public int getBeginNodeId() {
-		return beginNodeId;
-	}
-
-	public int getEndNodeId() {
-		return endNodeId;
-	}
-
-	public int getBandwidth() {
-		return bandwidth;
+		return "NetworkLink [id=" + id + " name=" + name + " isDummy=" + isDummy + " beginNodeId="
+				+ beginNodeId + " endNodeId=" + endNodeId + " bandwidth="
+				+ bandwidth + " inputFlow=" + inputFlow + " outputFlow=" + outputFlow + " weight=" + super.getWeight()+ "]";
 	}
 	
-	public int getOutputWeight(int deltaT) {
-		return this.bandwidth * deltaT;
-	}
 	
-	public int getInputWeight(int deltaT) {
-		return this.bandwidth * deltaT - (int) this.outputFlow; //decrease bandwidth by value used by output flow
+	public String toFormatedString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append( String.format("%10d %15s ",id,name) );
+		if (this.isDummy)
+			sb.append("dummy ");
+		else
+			sb.append("real  ");
+		sb.append( String.format("%10d -> %-10d ",beginNodeId,endNodeId) );//(beginNodeId + "->"+ endNodeId + " ");
+		sb.append( String.format("bandwidth=%1.0f ",bandwidth) );
+		sb.append( String.format("inputFlow=%1.0f ",inputFlow) );
+		sb.append( String.format("outputFlow=%1.0f ",outputFlow) );
+		sb.append( String.format("weight=%1.0f",super.getWeight()) );
+		return sb.toString();
 	}
-	
-	public boolean isDummy() {
-		// TODO Auto-generated method stub
-		return this.isDummy;
+
+	//to get weight from the superclass
+	@Override
+	public double getWeight(){
+		return super.getWeight();
 	}
 	
 	//comparison of two links
@@ -127,5 +102,56 @@ public class NetworkLink extends DefaultWeightedEdge{
     public int hashCode() {
         return this.id;
     }
+	
+	public double getInputFlow() {
+		return inputFlow;
+	}
+
+	public void setInputFlow(double inputFlow) {
+		this.inputFlow = inputFlow;
+	}
+
+	public double getOutputFlow() {
+		return outputFlow;
+	}
+
+	public void setOutputFlow(double outputFlow) {
+		this.outputFlow = outputFlow;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public int getBeginNodeId() {
+		return beginNodeId;
+	}
+
+	public int getEndNodeId() {
+		return endNodeId;
+	}
+
+	public double getBandwidth() {
+		return bandwidth;
+	}
+	
+	public double getOutputWeight(int deltaT) { //edge weight for output problem
+		return this.bandwidth * deltaT;
+	}
+	
+	public double getInputWeight(int deltaT) {//edge weight for input problem
+		return this.bandwidth * deltaT - this.outputFlow; //decrease bandwidth by value used by output flow
+	}
+	
+	public boolean isDummy() {
+		// TODO Auto-generated method stub
+		return this.isDummy;
+	}
+	
+
 	
 }

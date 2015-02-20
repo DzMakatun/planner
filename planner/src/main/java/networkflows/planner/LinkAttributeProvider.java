@@ -15,8 +15,11 @@ public class LinkAttributeProvider implements ComponentAttributeProvider<Network
 	
 	public Map<String, String> getComponentAttributes(NetworkLink link) {
 		Map<String, String> map =new LinkedHashMap<String, String>();
-        map.put("weight", Double.toString(this.graph.getEdgeWeight(link)));
+        map.put("weight", Double.toString(link.getWeight()));
         map.put("isDummy", Boolean.toString(link.isDummy()));
+        map.put("bandwidth", Double.toString(link.getBandwidth()));
+        map.put("inputFlow", Double.toString(link.getInputFlow()));
+        map.put("outputFlow", Double.toString(link.getOutputFlow()));
 		return map;
 	}
 

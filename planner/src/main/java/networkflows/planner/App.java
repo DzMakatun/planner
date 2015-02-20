@@ -26,23 +26,25 @@ public final class App
      */
     public static void main(String [] args)
     {
-        long startTime = System.currentTimeMillis();                
+        long startTime = System.currentTimeMillis();     	//measure execution time               
     	System.out.println("Starting Test");
     	
-    	DataProductionPlanner planner = new DataProductionPlanner();
+    	//initialization
+    	DataProductionPlanner planner = new DataProductionPlanner("input/planner.conf");
     	planner.ReadNodesFromFile("input/nodes.csv");
-    	planner.ReadLinksFromFile("input/links.csv");
-
-
-    	//measure execution time
+    	planner.ReadLinksFromFile("input/links.csv");            
         
-        
-        planner.PrintGridSetup();
-        planner.WriteGridODT("output/grid.dot");
+    	//solution (order of calls should be exactly like this)
         planner.CreateOutputNetwork();
         planner.SolveOutputProblem();
-        planner.WriteOutputNetworkODT("output/outputNetwork.dot");
         planner.CreateInputNetwork();
+        planner.SolveInputProblem();
+        
+        //generating output
+        planner.PrintGridSetup();
+        		//ODT is standard graph format, compatible with Gephi, graphviz and etc.
+        planner.WriteGridODT("output/grid.dot");
+        planner.WriteOutputNetworkODT("output/outputNetwork.dot");        
         planner.WriteInputNetworkODT("output/inputNetwork.dot");
         //if (planner.GridIsCostintent()){
         //	System.out.println("Grid passed the consistency check");
