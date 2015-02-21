@@ -1,5 +1,7 @@
 /**
- * 
+ * @author Dzmitry Makatun
+ * e-mail: d.i.makatun@gmail.com
+ * 2015 
  */
 package networkflows.planner;
 
@@ -7,15 +9,9 @@ import java.io.IOException;
 
 import org.jgrapht.graph.DefaultWeightedEdge;
 
-/**
- * @author Dima
- *
- */
+
 public class NetworkLink extends DefaultWeightedEdge{
-	/**
-	 * 
-	 */
-	
+	//inherits double private weight from superclass 
 	private int id;
 	private String name;	
 	private boolean isDummy;

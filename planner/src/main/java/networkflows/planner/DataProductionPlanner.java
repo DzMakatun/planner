@@ -1,3 +1,8 @@
+/**
+ * @author Dzmitry Makatun
+ * e-mail: d.i.makatun@gmail.com
+ * 2015 
+ */
 package networkflows.planner;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -39,8 +44,8 @@ public class DataProductionPlanner {
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> grid = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> inputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> outputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
-	private CompNode source = new CompNode(Integer.MAX_VALUE, "Dummy Source", false, false, false, false, 0, true);
-	private CompNode sink = new CompNode(Integer.MAX_VALUE -1 , "Dummy Sink", false, false, false, false, 0, true);
+	private CompNode source = new CompNode(Integer.MAX_VALUE, "Dummy Source", true, false, false, false, false, 0, 0, 1, 0, 0, 0, 0, 0 );
+	private CompNode sink = new CompNode(Integer.MAX_VALUE -1 , "Dummy Sink", true, false, false, false, false, 0, 0, 1, 0, 0, 0, 0, 0);
 	private int i; //link id iterator
 	//for exports to .dot file
 	private static NodeIdProvider nodeIds=new NodeIdProvider(); //node ids correspond to those in input file
@@ -50,7 +55,8 @@ public class DataProductionPlanner {
 	
 	//solution parameters
 	private int deltaT;
-	private double beta = 1.0;
+	//private float alpha;
+	private float beta;
 	
 	
 	private void ReadConfigFile(String configFilename)
@@ -62,10 +68,11 @@ public class DataProductionPlanner {
 		prop.load(input);
 	 		// get the property value and print it out
 		this.deltaT = Integer.parseInt(prop.getProperty("deltaT"));
+		this.beta = Float.parseFloat(prop.getProperty("beta"));
 	}
 	
 	public String getConfigString(){
-		return "[Planner config: deltaT=" + this.deltaT + "]";
+		return "[Planner config: deltaT=" + this.deltaT +" beta=" + this.beta + "]";
 	}
 	
 	//constructor
@@ -203,7 +210,7 @@ public class DataProductionPlanner {
 			if (node.isOutputSource()){
 				dummyEdgeD = new NetworkLink(this.i--, "dummy_edge_D",this.source.getId(), node.getId(), 0, true); //dummy edge from source to processing node
 				this.outputNetwork.addEdge(this.source, node, dummyEdgeD); 		
-				this.outputNetwork.setEdgeWeight(dummyEdgeD, node.getOutputWeight(this.deltaT));
+				this.outputNetwork.setEdgeWeight(dummyEdgeD, node.getOutputWeight(this.deltaT, this.beta));
 			}	
 		}
 		
@@ -226,6 +233,9 @@ public class DataProductionPlanner {
 		Map<NetworkLink,Double> solution = solver.getMaximumFlow(); //get the solution
 		for(NetworkLink edge: this.outputNetwork.edgeSet()){
 			edge.setOutputFlow(solution.get(edge));			//propagate the solution to this. instance of network
+			if (edge.isDummy()){
+				this.outputNetwork.getEdgeTarget(edge).setNettoOutputFlow(solution.get(edge)); //write neto output flow to comp node
+			}
 		}
 		System.out.println("OUTPUT NETWORK SETUP");	
 		this.PrintNetworkSetup(this.outputNetwork);			
@@ -248,7 +258,7 @@ public class DataProductionPlanner {
 			if (node.isInputDestination()){
 				dummyEdgeD = new NetworkLink(this.i--, "dummy_edge_D", node.getId(), this.sink.getId(), 0, true);
 				this.inputNetwork.addEdge(node, this.sink, dummyEdgeD); //dummy edge from processing node to sink			
-				this.inputNetwork.setEdgeWeight(dummyEdgeD, node.getInputWeight(this.deltaT));
+				this.inputNetwork.setEdgeWeight(dummyEdgeD, node.getInputWeight(this.deltaT, this.beta));
 			}	
 		}
 		
@@ -270,16 +280,41 @@ public class DataProductionPlanner {
 		Map<NetworkLink,Double> solution = solver.getMaximumFlow(); //get the solution
 		for(NetworkLink edge: this.inputNetwork.edgeSet()){
 			edge.setInputFlow(solution.get(edge));			//propagate the solution to this. instance of network
+			if (edge.isDummy()){
+				this.outputNetwork.getEdgeSource(edge).setNettoInputFlow(solution.get(edge)); //write neto input flow to comp node
+			}
 		}
 		System.out.println("INPUT NETWORK SETUP");	
 		this.PrintNetworkSetup(this.inputNetwork);			
+	}
+	
+	public void CalculateNodeFlows(){
+		double incomingInputFlow, outgoingInputFlow, outgoingOutputFlow, incomingOutputFlow;
+		for (CompNode node: this.grid.vertexSet()){
+			incomingInputFlow = 0;
+			outgoingInputFlow = 0;
+			outgoingOutputFlow = 0;
+			incomingOutputFlow =0;
+			for (NetworkLink link: this.grid.outgoingEdgesOf(node)){
+				outgoingInputFlow += link.getInputFlow();
+				outgoingOutputFlow += link.getOutputFlow();				
+			}
+			for (NetworkLink link: this.grid.incomingEdgesOf(node)){
+				incomingInputFlow += link.getInputFlow();
+				incomingOutputFlow += link.getOutputFlow();
+			}
+			node.setIncomingInputFlow(incomingInputFlow);
+			node.setIncomingOutputFlow(incomingOutputFlow);
+			node.setOutgoingInputFlow(outgoingInputFlow);
+			node.setOutgoingOutputFlow(outgoingOutputFlow);
+		}
 	}
 	
 	public void PrintNetworkSetup(SimpleDirectedWeightedGraph<CompNode, NetworkLink> g){
 		System.out.println("~~~~~~~~~~~~~~~~~~~~~~~NETWORK SETUP~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
 		System.out.println("VERTEXES: ");		
 		for (CompNode node: g.vertexSet()){
-			System.out.println(node.toString());
+			System.out.println(node.toFormatedString());
 		}
 		System.out.println("");	
 		System.out.println("EDGES: ");	
