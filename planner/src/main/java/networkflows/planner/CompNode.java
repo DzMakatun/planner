@@ -20,7 +20,7 @@ public class CompNode {
 	private boolean isOutputSource;			//true for the processing nodes
 	
 	//values to calculate capacities of dummy edges
-	private long disk; //available storage spce
+	private long disk; //available storage space
 	private int cpuN; //number of cpus
 	private float alpha; //time to process one unit of data
 	private long minOut; //minimal amount of output data (reserved by running jobs)	
@@ -31,7 +31,7 @@ public class CompNode {
 	private double outputWeight;				//weight (bandwidth) for the output transfer problem	
 	
 	private double inputCanProvide;				//for the central storage amount of input data that can be transferred
-	private double outputCanStore;					//for the central storage amount of output data that can be accommodated	
+	private double outputCanStore;				//for the central storage amount of output data that can be accommodated	
 	
 	//to monitore solution quality
 	private double incomingInputFlow;
@@ -106,7 +106,7 @@ public class CompNode {
 	
 
 	public double getNettoOutputFlow() {
-		return nettoOutputFlow;
+		return this.incomingOutputFlow - this.outgoingOutputFlow;
 	}
 
 	public void setNettoOutputFlow(double nettoOutputFlow) {
@@ -116,7 +116,7 @@ public class CompNode {
 	
 	
 	public double getNettoInputFlow() {
-		return nettoInputFlow;
+		return this.incomingInputFlow - this.outgoingInputFlow;
 	}
 
 	public void setNettoInputFlow(double nettoInputFlow) {
@@ -290,10 +290,39 @@ public class CompNode {
         return this.id;
     }
 
-	public boolean isDummy() {
-		// TODO Auto-generated method stub
-		return this.isDummy;
-	}
+    public boolean isDummy() {
+	// TODO Auto-generated method stub
+	return this.isDummy;
+    }
+    
+    /**
+     * cleans status and solution data from the nodes
+     */
+    public void clean(){
+	initInputSize = 0;
+	initOutputSize = 0;
+	inputWeight = 0;
+	outputWeight =0;
+	inputCanProvide = 0;
+	outputCanStore = 0;
+	
+	incomingInputFlow = 0;
+	outgoingInputFlow = 0;
+	nettoInputFlow = 0;
+	outgoingOutputFlow = 0;
+	incomingOutputFlow = 0;
+	nettoOutputFlow = 0;	
+    }
+	
+    
+    public void update(long initInputSize, long initOutputSize, double inputCanProvide, double outputCanStore){
+	clean();
+	this.initInputSize = initInputSize;
+	this.initOutputSize = initOutputSize;
+	this.inputCanProvide = inputCanProvide;
+	this.outputCanStore = outputCanStore;
+    }
+
 
 
 }

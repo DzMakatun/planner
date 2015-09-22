@@ -75,10 +75,126 @@ public class DataProductionPlanner {
 		return "[Planner config: deltaT=" + this.deltaT +" beta=" + this.beta + "]";
 	}
 	
+	/**
+	 * Cunstructor for simulations
+	 */
+	public DataProductionPlanner(String logFilename, int deltaT, float beta){
+	    // Configure the logger with handler and formatter 
+	    try {   
+	    	DataProductionPlanner.fh = new FileHandler(logFilename);  
+	        DataProductionPlanner.logger.addHandler(DataProductionPlanner.fh);
+	        DataProductionPlanner.formatter = new SimpleFormatter();  
+	        DataProductionPlanner.fh.setFormatter(DataProductionPlanner.formatter);  
+	        DataProductionPlanner.logger.setLevel(Level.FINEST); 
+	    } catch (Exception e) {  
+	        e.printStackTrace();
+	        return;
+	    } 
+	    
+	    this.deltaT = deltaT;
+	    this.beta = beta;
+	    logger.log(Level.INFO,"Planner started. deltaT = " + deltaT + " beta = " + beta);
+	    
+	}
+	
+	/**
+	 * Adds a new node to the graph representing the grid
+	 * @param node new node to add
+	 * @return
+	 */
+	public boolean addNode(CompNode node){
+	    if (grid.addVertex(node)){ //if node added successfully 
+    		DataProductionPlanner.logger.log( Level.FINEST, "Node red from file: "+node.toString());      
+    		return true;
+    	    }else{ //if node adding failled
+    		DataProductionPlanner.logger.log( Level.WARNING, "Dublicated nodes in the nodes file (line skipped): "+node.toString());				            	
+    		return false;
+    	    }	    
+	}
+	
+	public boolean addLink(NetworkLink link){
+	    CompNode bnode = getNode(link.getBeginNodeId());
+	    CompNode enode = getNode(link.getEndNodeId());
+	    if (bnode!=null && enode!=null && this.grid.addEdge(bnode,enode,link)){ // this skips links with same id's or missing nodes
+    		//link is valid and unique        			
+    		 this.grid.setEdgeWeight(link, link.getBandwidth() * this.deltaT); //weight is bandwidth * time window
+            	 //this.links.add(link);
+            	 DataProductionPlanner.logger.log( Level.FINEST, "Link red from file: " + link.toString());	
+            	 return true;
+    	    }else{
+    		 DataProductionPlanner.logger.log( Level.WARNING, "Duplicated link or missing nodes (line skipped): "+link.toString()); 
+    	         return false;
+    	    }
+	}
+	
+	/**
+	 * cleans the data before creating a new solution
+	 * this shoud be called before updating nodes data
+	 */
+	public void clean(){
+	    //reset input/output problem entities
+	    inputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
+	    outputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
+	    
+	    //clean links
+	    for(NetworkLink link : grid.edgeSet()){
+		link.clean();
+	    }
+	    
+	    for(CompNode node : grid.vertexSet()){
+		node.clean();
+	    }	    
+	}
+	
+	public void solve(){
+	    	//solution (order of calls should be exactly like this)
+	        CreateOutputNetwork();
+	        SolveOutputProblem();
+	        CreateInputNetwork();
+	        SolveInputProblem();
+	        CalculateNodeFlows();
+	}
+	
+	/**
+	 * provides links to extract solution
+	 * @return
+	 */
+	public Set<NetworkLink> getGridLinks(){
+	    return grid.edgeSet();
+	}
+	
+	/**
+	 * provides nodes to extract solution
+	 * @return
+	 */
+	public Set<CompNode> getGridNodes(){    
+	    return grid.vertexSet();
+	}
+	
+	
+	/**
+	 * updates status of nodes before each planning step
+	 * @return
+	 */
+	public boolean updateNode(int id, long initInputSize, long initOutputSize,
+		double inputCanProvide, double outputCanStore ){
+	    CompNode node = getNode(id);
+	    if (node != null){
+		node.update(initInputSize, initOutputSize, inputCanProvide, outputCanStore);
+	    }
+	    
+	    return false; //the node with this id doesn't exist
+	}
+	
+	
+	
+	//update(long initInputSize, long initOutputSize, double inputCanProvide, double outputCanStore)
+	
+	
 	//constructor
 	public DataProductionPlanner(String configFilename) { 
 		
-        // Configure the logger with handler and formatter 
+            // Configure the logger with handler and formatter 
 	    try {   
 	    	DataProductionPlanner.fh = new FileHandler("log/DataProductionPlanner.log");  
 	        DataProductionPlanner.logger.addHandler(DataProductionPlanner.fh);

@@ -43,7 +43,7 @@ public final class Demo
         //generating output
         planner.CalculateNodeFlows();
         planner.PrintGridSetup();
-        		//ODT is standard graph format, compatible with Gephi, graphviz and etc.
+        //ODT is standard graph format, compatible with Gephi, graphviz and etc.
         planner.WriteGridODT("output/grid.dot");
         //planner.WriteOutputNetworkODT("output/outputNetwork.dot");        
         //planner.WriteInputNetworkODT("output/inputNetwork.dot");

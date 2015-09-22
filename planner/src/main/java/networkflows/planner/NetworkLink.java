@@ -36,6 +36,11 @@ public class NetworkLink extends DefaultWeightedEdge{
 		this.isDummy = isDummy;
 	}
 	
+	public void clean(){
+	    this.inputFlow = 0;
+	    this.outputFlow = 0;
+	}
+	
 	//constructor from string
 	public NetworkLink(String [] row) throws IOException {
 		super();
