@@ -106,7 +106,7 @@ public class CompNode {
 	
 
 	public double getNettoOutputFlow() {
-		return this.incomingOutputFlow - this.outgoingOutputFlow;
+		return this.nettoOutputFlow;
 	}
 
 	public void setNettoOutputFlow(double nettoOutputFlow) {
@@ -116,7 +116,7 @@ public class CompNode {
 	
 	
 	public double getNettoInputFlow() {
-		return this.incomingInputFlow - this.outgoingInputFlow;
+		return this.nettoInputFlow;
 	}
 
 	public void setNettoInputFlow(double nettoInputFlow) {
@@ -128,8 +128,15 @@ public class CompNode {
 	}
 	
 	private void CalculateInputWeight(int deltaT, float beta){
-		this.inputWeight = this.disk - this.initInputSize - this.initOutputSize + ( (1 -beta) * this.cpuN * deltaT) /  this.alpha + this.nettoOutputFlow;
+	       double maxInputDataCanAccomodate = this.disk - this.initInputSize - this.initOutputSize //initial free space
+		       + ( (1 -beta) * this.cpuN * deltaT) /  this.alpha //free space due to deleted data
+		       + this.nettoOutputFlow; //free space due to transferred outputfiles
+	       
+	       double dataCanProcess = (this.cpuN * deltaT) /  this.alpha; //input data that can be processed during the time interval
+	       this.inputWeight = maxInputDataCanAccomodate;//Math.min(maxInputDataCanAccomodate, dataCanProcess);
+	
 	}
+	
 	
 	
 	public double getOutputWeight(int deltaT,float beta) {

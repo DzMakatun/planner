@@ -181,8 +181,9 @@ public class DataProductionPlanner {
 	    CompNode node = getNode(id);
 	    if (node != null){
 		node.update(initInputSize, initOutputSize, inputCanProvide, outputCanStore);
+		return true;
 	    }
-	    
+	    logger.log( Level.WARNING, "node not found: " + id);
 	    return false; //the node with this id doesn't exist
 	}
 	
@@ -353,8 +354,8 @@ public class DataProductionPlanner {
 				this.outputNetwork.getEdgeTarget(edge).setNettoOutputFlow(solution.get(edge)); //write neto output flow to comp node
 			}
 		}
-		System.out.println("OUTPUT NETWORK SETUP");	
-		this.PrintNetworkSetup(this.outputNetwork);			
+		//System.out.println("OUTPUT NETWORK SETUP");	
+		//this.PrintNetworkSetup(this.outputNetwork);			
 	}
 	
 	public void CreateInputNetwork(){
@@ -400,8 +401,8 @@ public class DataProductionPlanner {
 				this.outputNetwork.getEdgeSource(edge).setNettoInputFlow(solution.get(edge)); //write neto input flow to comp node
 			}
 		}
-		System.out.println("INPUT NETWORK SETUP");	
-		this.PrintNetworkSetup(this.inputNetwork);			
+		//System.out.println("INPUT NETWORK SETUP");	
+		//this.PrintNetworkSetup(this.inputNetwork);			
 	}
 	
 	public void CalculateNodeFlows(){
