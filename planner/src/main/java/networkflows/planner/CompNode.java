@@ -40,6 +40,7 @@ public class CompNode {
 	private double outgoingOutputFlow;
 	private double incomingOutputFlow;
 	private double nettoOutputFlow;
+	private double localProcessingFlow;
 	
 	//constructor TO DO
 	/*public CompNode(int id, String name, boolean isInputSource,
@@ -124,7 +125,12 @@ public class CompNode {
 	}
 
 	private void CalculateOutputWeight(int deltaT, float beta){
-		this.outputWeight = this.initOutputSize + (this.cpuN * beta * deltaT) / this.alpha - this.minOut;
+	    	if (this.initInputSize == 0){ //if there is no more data to process
+	    	    this.outputWeight = this.initOutputSize;
+	    	}else{
+	    	    this.outputWeight = this.initOutputSize + (this.cpuN * beta * deltaT) / this.alpha - this.minOut;
+	    	}
+		
 	}
 	
 	private void CalculateInputWeight(int deltaT, float beta){
@@ -328,6 +334,14 @@ public class CompNode {
 	this.initOutputSize = initOutputSize;
 	this.inputCanProvide = inputCanProvide;
 	this.outputCanStore = outputCanStore;
+    }
+
+    public double getLocalProcessingFlow() {
+	return localProcessingFlow;
+    }
+
+    public void setLocalProcessingFlow(double localProcessingFlow) {
+	this.localProcessingFlow = localProcessingFlow;
     }
 
 

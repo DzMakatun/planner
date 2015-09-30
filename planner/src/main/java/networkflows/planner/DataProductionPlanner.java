@@ -146,13 +146,21 @@ public class DataProductionPlanner {
 	    }	    
 	}
 	
-	public void solve(){
-	    	//solution (order of calls should be exactly like this)
-	        CreateOutputNetwork();
-	        SolveOutputProblem();
-	        CreateInputNetwork();
-	        SolveInputProblem();
-	        CalculateNodeFlows();
+	/**
+	 * solve the data production problem for the defined Grid
+	 * @return sum of input and output flows
+	 */
+	public double solve(){
+	    double outputFlow = 0;
+	    double inputFlow = 0;
+	    
+	    //solution (order of calls should be exactly like this)
+	    CreateOutputNetwork();
+	    outputFlow = SolveOutputProblem();
+	    CreateInputNetwork();
+	    inputFlow = SolveInputProblem();
+	    CalculateNodeFlows();
+	    return outputFlow + inputFlow;
 	}
 	
 	/**
@@ -342,7 +350,11 @@ public class DataProductionPlanner {
 			
 	}
 	
-	public void SolveOutputProblem(){
+	/**
+	 * Solves previously defined Output problem
+	 * @return getMaximumFlowValue()
+	 */
+	public double SolveOutputProblem(){
 		DataProductionPlanner.logger.log( Level.INFO, "Solving output problem");
 		EdmondsKarpMaximumFlow<CompNode,NetworkLink> solver = new EdmondsKarpMaximumFlow<CompNode,NetworkLink>(this.outputNetwork); // create a solver for our network
 		solver.calculateMaximumFlow(this.source, this.sink); //this solves for a given sink and source
@@ -355,7 +367,8 @@ public class DataProductionPlanner {
 			}
 		}
 		//System.out.println("OUTPUT NETWORK SETUP");	
-		//this.PrintNetworkSetup(this.outputNetwork);			
+		//this.PrintNetworkSetup(this.outputNetwork);	
+		return solver.getMaximumFlowValue();
 	}
 	
 	public void CreateInputNetwork(){
@@ -388,8 +401,11 @@ public class DataProductionPlanner {
 			this.inputNetwork.setEdgeWeight(link, link.getInputWeight(this.deltaT)); //edge weight equals to Bandwidth * timeInteerval - output flow
 		}
 	}
-	
-	public void SolveInputProblem(){
+	/**solves previously defined input problem
+	 * 
+	 * @return getMaximumFlowValue()
+	 */
+	public double SolveInputProblem(){
 		DataProductionPlanner.logger.log( Level.INFO, "Solving input problem");
 		EdmondsKarpMaximumFlow<CompNode,NetworkLink> solver = new EdmondsKarpMaximumFlow<CompNode,NetworkLink>(this.inputNetwork); // create a solver for our network
 		solver.calculateMaximumFlow(this.source, this.sink); //this solves for a given sink and source
@@ -402,7 +418,8 @@ public class DataProductionPlanner {
 			}
 		}
 		//System.out.println("INPUT NETWORK SETUP");	
-		//this.PrintNetworkSetup(this.inputNetwork);			
+		//this.PrintNetworkSetup(this.inputNetwork);		
+		return solver.getMaximumFlowValue();
 	}
 	
 	public void CalculateNodeFlows(){
@@ -502,7 +519,7 @@ public class DataProductionPlanner {
 	}
 	
 	public void WriteOutputNetworkODT(String outputFilename){
-		this.WriteODT(this.outputNetwork, outputFilename);		
+		this.WriteODT(this.outputNetwork, outputFilename);	
 	}
-	
+
 }
