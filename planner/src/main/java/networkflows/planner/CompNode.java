@@ -24,8 +24,16 @@ public class CompNode {
 	private int cpuN; //number of cpus
 	private float alpha; //time to process one unit of data
 	private long minOut; //minimal amount of output data (reserved by running jobs)	
-	private long initInputSize;
-	private long initOutputSize;	
+	private long waitingInputSize;
+	private long readyOutputSize;	
+	private long reservedOutputSize;
+	private long submittedInputSize;
+	private int busyCPUs;
+	private long currentFreeSpace;
+	private double highMark = 0.75;
+	private double averageInputFileSize = 6000; //MB
+	private double processedInput = 0;
+	private double createdOutput = 0;
 	
 	private double inputWeight;				//weight (bandwidth) for the input transfer problem	
 	private double outputWeight;				//weight (bandwidth) for the output transfer problem	
@@ -73,8 +81,8 @@ public class CompNode {
 		this.cpuN = Integer.parseInt(row[7]);
 		this.alpha = Float.parseFloat(row[8]);
 		this.minOut = Long.parseLong(row[9]);
-		this.initInputSize = Long.parseLong(row[10]);
-		this.initOutputSize = Long.parseLong(row[11]);
+		this.waitingInputSize = Long.parseLong(row[10]);
+		this.readyOutputSize = Long.parseLong(row[11]);
 		this.inputCanProvide =  Double.parseDouble(row[12]);
 		this.outputCanStore =  Double.parseDouble(row[13]);
 		
@@ -85,8 +93,8 @@ public class CompNode {
 	public CompNode(int id, String name, boolean isDummy,
 			boolean isInputSource, boolean isOutputDestination,
 			boolean isInputDestination, boolean isOutputSource, long disk,
-			int cpuN, float alpha, long minOut, long initInputSize,
-			long initOutputSize, double inputCanProvide, double outputCanStore) {
+			int cpuN, float alpha, long minOut, long waitingInputSize,
+			long readyOutputSize, double inputCanProvide, double outputCanStore) {
 		this.id = id;
 		this.name = name;
 		this.isDummy = isDummy;
@@ -98,8 +106,8 @@ public class CompNode {
 		this.cpuN = cpuN;
 		this.alpha = alpha;
 		this.minOut = minOut;
-		this.initInputSize = initInputSize;
-		this.initOutputSize = initOutputSize;
+		this.waitingInputSize = waitingInputSize;
+		this.readyOutputSize = readyOutputSize;
 		this.inputCanProvide = inputCanProvide;
 		this.outputCanStore = outputCanStore;
 	}
@@ -125,22 +133,42 @@ public class CompNode {
 	}
 
 	private void CalculateOutputWeight(int deltaT, float beta){
-	    	if (this.initInputSize == 0){ //if there is no more data to process
-	    	    this.outputWeight = this.initOutputSize;
+	    	/*if (this.busyCPUs == this.cpuN){ //saturated mode
+	    	    this.outputWeight = this.readyOutputSize + (this.cpuN * beta * deltaT) / this.alpha;
 	    	}else{
-	    	    this.outputWeight = this.initOutputSize + (this.cpuN * beta * deltaT) / this.alpha - this.minOut;
-	    	}
-		
+	    	     this.outputWeight = this.readyOutputSize + this.reservedOutputSize;
+	    	}*/
+	    	//this.outputWeight = this.readyOutputSize + this.reservedOutputSize;
+	    double maxPossible = this.readyOutputSize + this.reservedOutputSize;
+	    double estimatedFlow = this.readyOutputSize + (this.cpuN * beta * deltaT) / this.alpha;
+	    this.outputWeight = Math.min(estimatedFlow, maxPossible);
+	    this.outputWeight = Math.max(this.outputWeight, this.createdOutput);//transfer not less then was created during last iteration
+	    
 	}
 	
 	private void CalculateInputWeight(int deltaT, float beta){
-	       double maxInputDataCanAccomodate = this.disk - this.initInputSize - this.initOutputSize //initial free space
-		       + ( (1 -beta) * this.cpuN * deltaT) /  this.alpha //free space due to deleted data
-		       + this.nettoOutputFlow; //free space due to transferred outputfiles
+	       double maxInputDataCanAccomodate = //this.disk - this.waitingInputSize - this.readyOutputSize //initial free space
+		       currentFreeSpace - disk * ( 1 - highMark); // disk * ( 1 - highMark) - minimal reserved space
+		       //+ ( (1 -beta) * this.cpuN * deltaT) /  this.alpha //free space due to deleted data
+		       //+ this.nettoOutputFlow; //free space due to transferred outputfiles
 	       
-	       double dataCanProcess = (this.cpuN * deltaT) /  this.alpha; //input data that can be processed during the time interval
-	       this.inputWeight = maxInputDataCanAccomodate;//Math.min(maxInputDataCanAccomodate, dataCanProcess);
-	
+	       if (maxInputDataCanAccomodate < 0){ maxInputDataCanAccomodate = 0; }
+	       
+	       double dataCanProcess;
+	       if (this.busyCPUs < this.cpuN && this.currentFreeSpace > 0){ //unsaturated regime
+		   maxInputDataCanAccomodate = ( currentFreeSpace - disk * ( 1 - highMark) ) / ( 1 + beta) ;
+		   dataCanProcess =   (this.cpuN * averageInputFileSize) - this.waitingInputSize; // if there are free CPU - transfer as much data as possible;
+		   
+	       }else{//saturated regime
+		   //dataCanProcess = (this.cpuN * deltaT) /  this.alpha; //input data that can be processed during the time interval
+		   dataCanProcess = this.submittedInputSize - this.waitingInputSize;
+		   if (dataCanProcess < 0){ dataCanProcess = 0; }
+	       }
+	       
+	       //the final weight is limited by the value that we can actually accommodate 
+	       this.inputWeight = Math.min(maxInputDataCanAccomodate, dataCanProcess);//Math.min(maxInputDataCanAccomodate, dataCanProcess);
+	       this.inputWeight = Math.max(this.processedInput, this.inputWeight); //transfer not less then was processed during last iteration
+	       if (this.inputWeight < 0){this.inputWeight = 0;}	
 	}
 	
 	
@@ -226,8 +254,8 @@ public class CompNode {
 				+ isOutputDestination + ", isInputDestination="
 				+ isInputDestination + ", isOutputSource=" + isOutputSource
 				+ ", disk=" + disk + ", cpuN=" + cpuN + ", alpha=" + alpha
-				+ ", minOut=" + minOut + ", initInputSize=" + initInputSize
-				+ ", initOutputSize=" + initOutputSize + ", inputWeight="
+				+ ", minOut=" + minOut + ", waitingInputSize=" + waitingInputSize
+				+ ", readyOutputSize=" + readyOutputSize + ", inputWeight="
 				+ inputWeight + ", outputWeight=" + outputWeight
 				+ ", inputCanProvide=" + inputCanProvide + ", outputCanStore="
 				+ outputCanStore + ", incomingInputFlow=" + incomingInputFlow
@@ -267,8 +295,8 @@ public class CompNode {
 		sb.append( String.format("cpuN=%d ",cpuN) );
 		sb.append( String.format("alpha=%.3f ",alpha) );
 		sb.append( String.format("minOut=%d ",minOut) );
-		sb.append( String.format("initInputSize=%d ",initInputSize) );
-		sb.append( String.format("initOutputSize=%d ",initOutputSize) );
+		sb.append( String.format("waitingInputSize=%d ",waitingInputSize) );
+		sb.append( String.format("readyOutputSize=%d ",readyOutputSize) );
 		sb.append( String.format("inputWeight=%.0f ",inputWeight) );
 		sb.append( String.format("outputWeight=%.0f ",outputWeight) );
 		sb.append( String.format("inputCanProvide=%.0f ",inputCanProvide) );
@@ -312,8 +340,8 @@ public class CompNode {
      * cleans status and solution data from the nodes
      */
     public void clean(){
-	initInputSize = 0;
-	initOutputSize = 0;
+	waitingInputSize = 0;
+	readyOutputSize = 0;
 	inputWeight = 0;
 	outputWeight =0;
 	inputCanProvide = 0;
@@ -328,12 +356,19 @@ public class CompNode {
     }
 	
     
-    public void update(long initInputSize, long initOutputSize, double inputCanProvide, double outputCanStore){
+    public void update(long waitingInputSize, long readyOutputSize, double inputCanProvide, double outputCanStore,
+	    int busyCPUs, long currentFreeSpace, long submittedInputSize, long reservedOutputSize, double processedInput, double createdOutput){
 	clean();
-	this.initInputSize = initInputSize;
-	this.initOutputSize = initOutputSize;
+	this.waitingInputSize = waitingInputSize;
+	this.readyOutputSize = readyOutputSize;
 	this.inputCanProvide = inputCanProvide;
 	this.outputCanStore = outputCanStore;
+	this.busyCPUs = busyCPUs;
+	this.currentFreeSpace = currentFreeSpace;
+	this.reservedOutputSize = reservedOutputSize;
+	this.submittedInputSize = submittedInputSize;
+	this.processedInput = processedInput;
+	this.createdOutput = createdOutput;
     }
 
     public double getLocalProcessingFlow() {

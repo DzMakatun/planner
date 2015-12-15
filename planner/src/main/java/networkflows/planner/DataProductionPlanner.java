@@ -182,13 +182,17 @@ public class DataProductionPlanner {
 	
 	/**
 	 * updates status of nodes before each planning step
+	 * @param createdOutput 
+	 * @param processedInput 
 	 * @return
 	 */
-	public boolean updateNode(int id, long initInputSize, long initOutputSize,
-		double inputCanProvide, double outputCanStore ){
+	public boolean updateNode(int id, long initInputSize, long initOutputSize, double inputCanProvide, double outputCanStore,
+		    int busyCPUs, long currentFreeSpace, long submittedInputSize, long reservedOutputSize, double processedInput, double createdOutput ){
 	    CompNode node = getNode(id);
 	    if (node != null){
-		node.update(initInputSize, initOutputSize, inputCanProvide, outputCanStore);
+		node.update(initInputSize, initOutputSize, inputCanProvide, outputCanStore,
+			    busyCPUs, currentFreeSpace, submittedInputSize, reservedOutputSize,
+			    processedInput, createdOutput);
 		return true;
 	    }
 	    logger.log( Level.WARNING, "node not found: " + id);
@@ -366,8 +370,8 @@ public class DataProductionPlanner {
 				this.outputNetwork.getEdgeTarget(edge).setNettoOutputFlow(solution.get(edge)); //write neto output flow to comp node
 			}
 		}
-		//System.out.println("OUTPUT NETWORK SETUP");	
-		//this.PrintNetworkSetup(this.outputNetwork);	
+		System.out.println("OUTPUT NETWORK SETUP");	
+		this.PrintNetworkSetup(this.outputNetwork);	
 		return solver.getMaximumFlowValue();
 	}
 	
@@ -407,6 +411,7 @@ public class DataProductionPlanner {
 	 */
 	public double SolveInputProblem(){
 		DataProductionPlanner.logger.log( Level.INFO, "Solving input problem");
+		this.PrintNetworkSetup(this.inputNetwork);
 		EdmondsKarpMaximumFlow<CompNode,NetworkLink> solver = new EdmondsKarpMaximumFlow<CompNode,NetworkLink>(this.inputNetwork); // create a solver for our network
 		solver.calculateMaximumFlow(this.source, this.sink); //this solves for a given sink and source
 		DataProductionPlanner.logger.log( Level.INFO, "Solved: input flow value is: " + solver.getMaximumFlowValue());
@@ -417,8 +422,8 @@ public class DataProductionPlanner {
 				this.outputNetwork.getEdgeSource(edge).setNettoInputFlow(solution.get(edge)); //write neto input flow to comp node
 			}
 		}
-		//System.out.println("INPUT NETWORK SETUP");	
-		//this.PrintNetworkSetup(this.inputNetwork);		
+		System.out.println("INPUT NETWORK SETUP");	
+		this.PrintNetworkSetup(this.inputNetwork);		
 		return solver.getMaximumFlowValue();
 	}
 	
