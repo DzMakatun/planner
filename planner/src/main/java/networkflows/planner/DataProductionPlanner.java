@@ -10,27 +10,19 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
 
-import org.jgrapht.*;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.graph.DefaultWeightedEdge;
-import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 import org.jgrapht.alg.EdmondsKarpMaximumFlow;
-import org.jgrapht.ext.*;
+import org.jgrapht.ext.DOTExporter;
+import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 
-import au.com.bytecode.opencsv.CSVReader;
+import com.opencsv.CSVReader;
 
 public class DataProductionPlanner {
 	//private Set<CompNode> nodes = new LinkedHashSet<CompNode>();
@@ -81,11 +73,14 @@ public class DataProductionPlanner {
 	public DataProductionPlanner(String logFilename, int deltaT, float beta){
 	    // Configure the logger with handler and formatter 
 	    try {   
+		logger.setUseParentHandlers(false);;
 	    	DataProductionPlanner.fh = new FileHandler(logFilename);  
 	        DataProductionPlanner.logger.addHandler(DataProductionPlanner.fh);
 	        DataProductionPlanner.formatter = new SimpleFormatter();  
 	        DataProductionPlanner.fh.setFormatter(DataProductionPlanner.formatter);  
-	        DataProductionPlanner.logger.setLevel(Level.FINEST); 
+	        DataProductionPlanner.logger.setLevel(Level.ALL); 
+	       
+	     
 	    } catch (Exception e) {  
 	        e.printStackTrace();
 	        return;
@@ -151,6 +146,9 @@ public class DataProductionPlanner {
 	 * @return sum of input and output flows
 	 */
 	public double solve(){
+	    long start = System.nanoTime();
+	    logger.log(Level.INFO, "\n \n \n @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ \n "
+	    	+ "NEW ITERATION");
 	    double outputFlow = 0;
 	    double inputFlow = 0;
 	    
@@ -159,7 +157,13 @@ public class DataProductionPlanner {
 	    outputFlow = SolveOutputProblem();
 	    CreateInputNetwork();
 	    inputFlow = SolveInputProblem();
-	    CalculateNodeFlows();
+	    long end = System.nanoTime();
+	    //CalculateNodeFlows();
+	    PrintGridSetup();
+	    logger.log(Level.INFO,"\n &&&&&&&&&&&&&&&   solving time = " + ((double) end - start)/1000000000.0 
+		    + " seconds  &&&&&&&&&&&&&&& \n" );
+	    logger.log(Level.INFO, "END OF ITERATION" +
+	        "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n \n \n");
 	    return outputFlow + inputFlow;
 	}
 	
@@ -370,8 +374,8 @@ public class DataProductionPlanner {
 				this.outputNetwork.getEdgeTarget(edge).setNettoOutputFlow(solution.get(edge)); //write neto output flow to comp node
 			}
 		}
-		System.out.println("OUTPUT NETWORK SETUP");	
-		this.PrintNetworkSetup(this.outputNetwork);	
+		logger.log( Level.INFO,"OUTPUT NETWORK SETUP");	
+		//this.PrintNetworkSetup(this.outputNetwork);	
 		return solver.getMaximumFlowValue();
 	}
 	
@@ -411,10 +415,10 @@ public class DataProductionPlanner {
 	 */
 	public double SolveInputProblem(){
 		DataProductionPlanner.logger.log( Level.INFO, "Solving input problem");
-		this.PrintNetworkSetup(this.inputNetwork);
+		//this.PrintNetworkSetup(this.inputNetwork);
 		EdmondsKarpMaximumFlow<CompNode,NetworkLink> solver = new EdmondsKarpMaximumFlow<CompNode,NetworkLink>(this.inputNetwork); // create a solver for our network
 		solver.calculateMaximumFlow(this.source, this.sink); //this solves for a given sink and source
-		DataProductionPlanner.logger.log( Level.INFO, "Solved: input flow value is: " + solver.getMaximumFlowValue());
+		DataProductionPlanner.logger.log( Level.INFO, "Input flow value is: " + solver.getMaximumFlowValue());
 		Map<NetworkLink,Double> solution = solver.getMaximumFlow(); //get the solution
 		for(NetworkLink edge: this.inputNetwork.edgeSet()){
 			edge.setInputFlow(solution.get(edge));			//propagate the solution to this. instance of network
@@ -422,8 +426,8 @@ public class DataProductionPlanner {
 				this.outputNetwork.getEdgeSource(edge).setNettoInputFlow(solution.get(edge)); //write neto input flow to comp node
 			}
 		}
-		System.out.println("INPUT NETWORK SETUP");	
-		this.PrintNetworkSetup(this.inputNetwork);		
+		logger.log( Level.INFO,"INPUT NETWORK SETUP");	
+		//this.PrintNetworkSetup(this.inputNetwork);		
 		return solver.getMaximumFlowValue();
 	}
 	
@@ -450,24 +454,28 @@ public class DataProductionPlanner {
 	}
 	
 	public void PrintNetworkSetup(SimpleDirectedWeightedGraph<CompNode, NetworkLink> g){
-		System.out.println("~~~~~~~~~~~~~~~~~~~~~~~NETWORK SETUP~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-		System.out.println("VERTEXES: ");		
+	        StringBuffer buf = new StringBuffer();
+	        buf.append("~~~~~~~~~~~~~~~~~~~~~~~NETWORK SETUP~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+	        buf.append("VERTEXES: \n");		
 		for (CompNode node: g.vertexSet()){
-			System.out.println(node.toFormatedString());
+		    buf.append(node.toFormatedString()+ "\n");
 		}
-		System.out.println("");	
-		System.out.println("EDGES: ");	
+		buf.append("\n");	
+		buf.append("EDGES: \n");	
 		for (NetworkLink link: g.edgeSet()){
-			System.out.println(link.toFormatedString());
+		    buf.append(link.toFormatedString() + "\n");
 		}
-		System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+		buf.append("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+		logger.log(Level.INFO, buf.toString());
 	}
 	
 	public void PrintGridSetup(){
 		PrintNetworkSetup(this.grid);
-		System.out.println("........................................................");
-		System.out.println(this.GridSummaryString());
-		System.out.println("........................................................");
+		StringBuffer buf = new StringBuffer();
+		buf.append("........................................................\n");
+		buf.append(this.GridSummaryString() + "\n");
+		buf.append("........................................................\n");
+		logger.log(Level.INFO, buf.toString());
 	}
 	
 	public String GridSummaryString(){
