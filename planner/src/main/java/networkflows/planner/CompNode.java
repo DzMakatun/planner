@@ -11,6 +11,9 @@ import java.util.logging.Level;
 
 public class CompNode {
 	private int id;
+	private int index;
+
+
 	private String name;
 	private boolean isDummy;
 	
@@ -110,8 +113,23 @@ public class CompNode {
 		this.readyOutputSize = readyOutputSize;
 		this.inputCanProvide = inputCanProvide;
 		this.outputCanStore = outputCanStore;
+		
+		this.currentFreeSpace = disk - waitingInputSize - readyOutputSize;
 	}
 	
+	/**
+	 * @return the index
+	 */
+	public int getIndex() {
+	    return index;
+	}
+
+	/**
+	 * @param index the index to set
+	 */
+	public void setIndex(int index) {
+	    this.index = index;
+	}
 	
 
 	public double getNettoOutputFlow() {

@@ -4,12 +4,17 @@
  * 2015 
  */
 package networkflows.planner;
+
+
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -30,6 +35,7 @@ public class DataProductionPlanner {
 	
 	//add logger
 	private static final Logger logger = Logger.getLogger( DataProductionPlanner.class.getName() );
+	private static final boolean printToConsole = true;
 	private static FileHandler fh;
 	private static SimpleFormatter formatter;
 	
@@ -143,6 +149,7 @@ public class DataProductionPlanner {
 	
 	/**
 	 * solve the data production problem for the defined Grid
+	 * ignores edge cost
 	 * @return sum of input and output flows
 	 */
 	public double solve(){
@@ -159,6 +166,121 @@ public class DataProductionPlanner {
 	    inputFlow = SolveInputProblem();
 	    long end = System.nanoTime();
 	    //CalculateNodeFlows();
+	    PrintGridSetup();
+	    logger.log(Level.INFO,"\n &&&&&&&&&&&&&&&   solving time = " + ((double) end - start)/1000000000.0 
+		    + " seconds  &&&&&&&&&&&&&&& \n" );
+	    logger.log(Level.INFO, "END OF ITERATION" +
+	        "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n \n \n");
+	    return outputFlow + inputFlow;
+	}
+	
+	
+	public List<int[][]> networkToMatrixes(SimpleDirectedWeightedGraph<CompNode, NetworkLink> network){
+	    int n = network.vertexSet().size(); //number of nodes
+	    int cap[][] = new int[n][n];
+	    int cost[][] = new int[n][n];
+	    for (int k = 0; k < n; k++ ){
+		for(int l = 0; l<n; l++){
+		    cap[k][l] = 0;
+		    cost[k][l] = 0;
+		}
+	    }
+	    //enumerate vertices
+	    int i = 0;
+	    for(CompNode node: network.vertexSet()){
+		node.setIndex(i);
+		logger.log(Level.INFO, node.getName() +" " + i);
+		display(node.getName() +" " + i);
+		i++;
+	    }
+	    int j;
+	    for (NetworkLink link: network.edgeSet()){
+		i = network.getEdgeSource(link).getIndex();
+		j = network.getEdgeTarget(link).getIndex();
+		cap[i][j] = (int) network.getEdgeWeight(link);
+		cost[i][j] = link.getCost();	  
+	    }
+	    
+	    List<int[][]> result = new ArrayList();
+	    result.add(cap);
+	    result.add(cost);
+	    return result;    
+	}
+	
+	public void solveOutputProblemWithCost(){
+	    MinCostMaxFlow solver = new MinCostMaxFlow(); //Solver for Minimum cost maximum flow problem.
+	    List<int[][]> matrixes;
+	    int[][] cap;
+	    int[][] cost;
+	    // transform output problem into matrixes	 
+	    matrixes = networkToMatrixes(this.outputNetwork);
+	    cap = matrixes.get(0);
+	    cost = matrixes.get(1);
+	    //solve output problem
+	    int outputSolution[][] = solver.getMaxFlow(cap, cost, this.source.getIndex(), this.sink.getIndex());
+	    //transform solution into JGraphT representation    
+	    if (outputSolution.length != this.outputNetwork.edgeSet().size() ){
+		logger.log(Level.SEVERE,"Output solution: wrong number of nodes");
+		display("ERROR: Output solution: wrong number of nodes");
+	    }
+	    int i,j;
+	    for(NetworkLink link: this.outputNetwork.edgeSet()){
+		i = outputNetwork.getEdgeSource(link).getIndex();
+		j = outputNetwork.getEdgeTarget(link).getIndex();
+		link.setOutputFlow(outputSolution[i][j]);			//propagate the solution to this. instance of network
+		if (link.isDummy()){
+			this.outputNetwork.getEdgeTarget(link).setNettoOutputFlow(outputSolution[i][j]); //write neto output flow to comp node
+		}
+	    }
+	    //logger.log( Level.INFO,"OUTPUT NETWORK SETUP");	
+	    //this.PrintNetworkSetup(this.outputNetwork);	
+	}
+	
+	public void solveInputProblemWithCost(){
+	    MinCostMaxFlow solver = new MinCostMaxFlow(); //Solver for Minimum cost maximum flow problem.
+	    List<int[][]> matrixes;
+	    int[][] cap;
+	    int[][] cost;
+	    matrixes = networkToMatrixes(this.inputNetwork);
+	    cap = matrixes.get(0);
+	    cost = matrixes.get(1);	    
+	    //solve input problem
+	    int inputSolution[][] = solver.getMaxFlow(cap, cost, this.source.getIndex(), this.sink.getIndex());	    
+	    if (inputSolution.length != this.inputNetwork.edgeSet().size() ){
+		logger.log(Level.SEVERE,"Input solution: wrong number of nodes: " + inputSolution.length);
+		display("ERROR: Input solution: wrong number of nodes");
+	    }
+	    int i,j;
+	    for(NetworkLink link: this.inputNetwork.edgeSet()){
+		i = inputNetwork.getEdgeSource(link).getIndex();
+		j = inputNetwork.getEdgeTarget(link).getIndex();
+		link.setInputFlow(inputSolution[i][j]);			//propagate the solution to this. instance of network
+		if (link.isDummy()){
+		    this.inputNetwork.getEdgeSource(link).setNettoInputFlow(inputSolution[i][j]); //write netto input flow to comp node
+		}
+
+	    }
+	    //logger.log( Level.INFO,"INPUT NETWORK SETUP");	
+	    //this.PrintNetworkSetup(this.inputNetwork);	
+	}
+	
+	/**
+	 * solve data production problem for the defined Grid
+	 * uses Minimum cost maximum flow problem
+	 * @return
+	 */
+	public double solveWithCost(){
+	    long start = System.nanoTime(); 
+	    logger.log(Level.INFO, "\n \n \n @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ \n "
+	    	+ "NEW ITERATION");
+	    double outputFlow = 0;
+	    double inputFlow = 0;
+	    CreateOutputNetwork();
+	    solveOutputProblemWithCost();
+	    //PrintGridSetup();
+	    CreateInputNetwork();
+	    solveInputProblemWithCost();
+	    long end = System.nanoTime();
 	    PrintGridSetup();
 	    logger.log(Level.INFO,"\n &&&&&&&&&&&&&&&   solving time = " + ((double) end - start)/1000000000.0 
 		    + " seconds  &&&&&&&&&&&&&&& \n" );
@@ -329,7 +451,7 @@ public class DataProductionPlanner {
 	
 	public void CreateOutputNetwork(){
 		DataProductionPlanner.logger.log( Level.INFO, "Creating output network");
-		NetworkLink dummyEdgeQ, dummyEdgeD;		
+		NetworkLink dummyEdgeQ, dummyEdgeD;	
 		this.outputNetwork.addVertex(this.source);
 		this.outputNetwork.addVertex(this.sink);		
 		//add nodes and dummy edges to network
@@ -355,8 +477,10 @@ public class DataProductionPlanner {
 			this.outputNetwork.addEdge(bnode, enode, link);
 			this.outputNetwork.setEdgeWeight(link, link.getOutputWeight(this.deltaT)); //edge weight equals to Bandwidth * timeInteerval
 		}
-			
+                
 	}
+	
+	
 	
 	/**
 	 * Solves previously defined Output problem
@@ -391,6 +515,7 @@ public class DataProductionPlanner {
 				dummyEdgeQ = new NetworkLink(this.i--, "dummy_edge_Q", this.source.getId(), node.getId(), 0, true);
 				this.inputNetwork.addEdge(this.source, node, dummyEdgeQ); //dummy edge from source to input storage	
 				this.inputNetwork.setEdgeWeight(dummyEdgeQ, node.getInputCanProvide());
+				dummyEdgeQ.setCost(-1); //set cost to balance source usage
 				
 			}
 			if (node.isInputDestination()){
@@ -423,7 +548,7 @@ public class DataProductionPlanner {
 		for(NetworkLink edge: this.inputNetwork.edgeSet()){
 			edge.setInputFlow(solution.get(edge));			//propagate the solution to this. instance of network
 			if (edge.isDummy()){
-				this.outputNetwork.getEdgeSource(edge).setNettoInputFlow(solution.get(edge)); //write neto input flow to comp node
+				this.inputNetwork.getEdgeSource(edge).setNettoInputFlow(solution.get(edge)); //write neto input flow to comp node
 			}
 		}
 		logger.log( Level.INFO,"INPUT NETWORK SETUP");	
@@ -467,6 +592,7 @@ public class DataProductionPlanner {
 		}
 		buf.append("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 		logger.log(Level.INFO, buf.toString());
+		display(buf.toString());
 	}
 	
 	public void PrintGridSetup(){
@@ -476,8 +602,11 @@ public class DataProductionPlanner {
 		buf.append(this.GridSummaryString() + "\n");
 		buf.append("........................................................\n");
 		logger.log(Level.INFO, buf.toString());
+		display(buf.toString());
 	}
 	
+
+
 	public String GridSummaryString(){
 		int numberOfNodes = this.grid.vertexSet().size();
 		int numberOfLinks = this.grid.edgeSet().size();
@@ -533,6 +662,13 @@ public class DataProductionPlanner {
 	
 	public void WriteOutputNetworkODT(String outputFilename){
 		this.WriteODT(this.outputNetwork, outputFilename);	
+	}
+	
+	private void display(String string) {
+	    if (this.printToConsole){
+		System.out.println(string);
+	    }
+	    
 	}
 
 }

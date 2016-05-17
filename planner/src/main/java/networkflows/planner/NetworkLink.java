@@ -21,9 +21,23 @@ public class NetworkLink extends DefaultWeightedEdge{
 	
 	private double inputFlow;
 	private double outputFlow;
+	private int cost;
 	
 	
-	
+	/**
+	 * @return the cost
+	 */
+	public int getCost() {
+	    return cost;
+	}
+
+	/**
+	 * @param cost the cost to set
+	 */
+	public void setCost(int cost) {
+	    this.cost = cost;
+	}
+
 	//constructor
 	public NetworkLink(int id, String name, int beginNodeId, int endNodeId,
 			double bandwidth, boolean isDummy) {
@@ -34,6 +48,7 @@ public class NetworkLink extends DefaultWeightedEdge{
 		this.endNodeId = endNodeId;
 		this.bandwidth = bandwidth;
 		this.isDummy = isDummy;
+		this.cost = 0;
 	}
 	
 	public void clean(){
@@ -53,6 +68,7 @@ public class NetworkLink extends DefaultWeightedEdge{
 		this.endNodeId = Integer.parseInt(row[3]);
 		this.bandwidth = Double.parseDouble(row[4]);
 		this.isDummy = false;
+		this.cost = 0;
 	}
 
 	@Override
