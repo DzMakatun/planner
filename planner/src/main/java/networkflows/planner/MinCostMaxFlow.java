@@ -32,12 +32,13 @@ import java.util.*;
 public class MinCostMaxFlow {
  boolean found[];
  int N,    //number of nodes
- cap[][],  //capacities
- flow[][], //solution
  cost[][], //cost
  dad[], //previous (ancestor) node on the s-t path
  dist[], //distance from source
  pi[]; //reduced cost
+ 
+ double  cap[][],  //capacities
+ flow[][]; //solution
  
  static final int INF = Integer.MAX_VALUE / 2 - 1;
  
@@ -76,20 +77,20 @@ public class MinCostMaxFlow {
  }
  
  
- int[][] getMaxFlow(int cap[][], int cost[][], int source, int sink) {
+ double[][] getMaxFlow(double cap[][], int cost[][], int source, int sink) {
 	this.cap = cap;
 	this.cost = cost;
 	
 	N = cap.length;
      found = new boolean[N];
-     flow = new int[N][N];
+     flow = new double[N][N];
      dist = new int[N+1];
      dad = new int[N];
      pi = new int[N];
 	
-	int totflow = 0, totcost = 0;
+	double totflow = 0, totcost = 0;
 	while (search(source, sink)) { //search for unused path 
-	    int amt = INF;
+	    double amt = INF;
 	    for (int x = sink; x != source; x = dad[x])// iterate over ancestors (find minimal value among ancestors)
 		amt = Math.min(amt, flow[x][dad[x]] != 0 ? flow[x][dad[x]] :
                     cap[dad[x]][x] - flow[dad[x]][x]); // change flow by this value
@@ -120,11 +121,11 @@ public class MinCostMaxFlow {
 
  public static void main (String args[]){
      MinCostMaxFlow flow = new MinCostMaxFlow();
-     int cap[][] = {{0, 3, 4, 5, 0},
-                    {3, 0, 2, 0, 0},
-                    {4, 2, 0, 4, 1},
-                    {0, 0, 4, 0, 10},
-                    {0, 0, 3, 10, 0}};
+     double[][] cap = {{0, 3000000000.0, 4000000000.0, 5000000000.0, 0},
+                    {3000000000.0, 0, 2000000000.0, 0, 0},
+                    {4000000000.0, 2000000000.0, 0, 4000000000.0, 1000000000.0},
+                    {0, 0, 4000000000.0, 0, 10000000000.0},
+                    {0, 0, 3000000000.0, 10000000000.0, 0}};
 
      int cost1[][] = {{0, 1, 0, 0, 0},
                       {0, 0, 0, 0, 0},
@@ -142,8 +143,8 @@ public class MinCostMaxFlow {
      //   10 1
      //   10 3
 
-     int ret1[][] = flow.getMaxFlow(cap, cost1, 0, 4);
-     int ret2[][] = flow.getMaxFlow(cap, cost2, 0, 4);
+     double[][] ret1 = flow.getMaxFlow(cap, cost1, 0, 4);
+     double[][] ret2 = flow.getMaxFlow(cap, cost2, 0, 4);
      
      //System.out.println (ret1[0] + " " + ret1[1]);
      //System.out.println (ret2[0] + " " + ret2[1]);

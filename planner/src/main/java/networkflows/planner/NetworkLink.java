@@ -22,6 +22,8 @@ public class NetworkLink extends DefaultWeightedEdge{
 	private double inputFlow;
 	private double outputFlow;
 	private int cost;
+	private double capacity;
+	private double excess;
 	
 	
 	/**
@@ -91,6 +93,71 @@ public class NetworkLink extends DefaultWeightedEdge{
 		sb.append( String.format("inputFlow=%1.0f ",inputFlow) );
 		sb.append( String.format("outputFlow=%1.0f ",outputFlow) );
 		sb.append( String.format("weight=%1.0f",super.getWeight()) );
+		
+		return sb.toString();
+	}
+	
+	public static String getFormatedHeader(){
+	    StringBuffer sb = new StringBuffer();
+		sb.append( String.format("%10s %20s ","id","name") );
+		sb.append("   ");
+		sb.append(" type  ");
+		sb.append( String.format("%10s -> %-10s ","fromId","toId") );//(beginNodeId + "->"+ endNodeId + " ");
+		sb.append( String.format(" bandwidth ") );
+		sb.append( String.format("cost   ") );
+		sb.append( String.format("  capacity ") );
+		sb.append( String.format(" inputFlow ") );
+		sb.append( String.format("outputFlow ") );
+		sb.append( String.format("    excess ") );
+				
+	    return sb.toString();
+	}
+	
+	public String toFormatedString2() {
+		StringBuffer sb = new StringBuffer();
+		sb.append( String.format("%10d %20s ",id,name) );
+		
+		if (inputFlow > 0){
+		    if (outputFlow > 0){
+			if(this.getExcess() == 0){
+			    sb.append("<+>");
+			}else{
+			    sb.append("<->");
+			}			
+		    }else{
+			if(this.getExcess() == 0){
+			    sb.append("->>");
+			}else{
+			    sb.append("-->");
+			}			    
+		    }
+		} else{
+		    if (outputFlow > 0){
+			if(this.getExcess() == 0){
+			    sb.append("<<-");
+			}else{
+			    sb.append("<--");
+			}			
+		    }else{
+			if(this.getExcess() == 0){
+			    sb.append("???");
+			}else{
+			    sb.append(" o ");
+			}			    
+		    }
+		}
+		
+		if (this.isDummy)
+			sb.append(" dummy ");
+		else
+			sb.append(" real  ");
+		sb.append( String.format("%10d -> %-10d ",beginNodeId,endNodeId) );//(beginNodeId + "->"+ endNodeId + " ");		
+		sb.append( String.format("%10.0f ",bandwidth) );
+		sb.append( String.format("%4d   ",cost) );
+		sb.append( String.format("%10.0f ",capacity) );
+		sb.append( String.format("%10.0f ",inputFlow) );
+		sb.append( String.format("%10.0f ",outputFlow) );
+		sb.append( String.format("%10.0f ", this.getExcess()) );	
 		return sb.toString();
 	}
 
@@ -164,11 +231,29 @@ public class NetworkLink extends DefaultWeightedEdge{
 		return this.bandwidth * deltaT - this.outputFlow; //decrease bandwidth by value used by output flow
 	}
 	
+	
+	
 	public boolean isDummy() {
 		// TODO Auto-generated method stub
 		return this.isDummy;
 	}
-	
+
+	public double getCapacity() {
+	    return capacity;
+	}
+
+	public void setCapacity(int deltaT) {
+	    if(isDummy){
+		this.capacity = super.getWeight();
+	    }else{
+		this.capacity = this.bandwidth * deltaT;
+	    }
+	    
+	}
+
+	public double getExcess() {
+	    return this.capacity - this.inputFlow -this.outputFlow;
+	}	
 
 	
 }

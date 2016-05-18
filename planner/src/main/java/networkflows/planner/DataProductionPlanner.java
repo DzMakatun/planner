@@ -42,8 +42,8 @@ public class DataProductionPlanner {
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> grid = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> inputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> outputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
-	private CompNode source = new CompNode(Integer.MAX_VALUE, "Dummy Source", true, false, false, false, false, 0, 0, 1, 0, 0, 0, 0, 0 );
-	private CompNode sink = new CompNode(Integer.MAX_VALUE -1 , "Dummy Sink", true, false, false, false, false, 0, 0, 1, 0, 0, 0, 0, 0);
+	private CompNode source = new CompNode(Integer.MAX_VALUE, "s", true, false, false, false, false, 0, 0, 1, 0, 0, 0, 0, 0 );
+	private CompNode sink = new CompNode(Integer.MAX_VALUE -1 , "t", true, false, false, false, false, 0, 0, 1, 0, 0, 0, 0, 0);
 	private int i; //link id iterator
 	//for exports to .dot file
 	private static NodeIdProvider nodeIds=new NodeIdProvider(); //node ids correspond to those in input file
@@ -175,10 +175,10 @@ public class DataProductionPlanner {
 	}
 	
 	
-	public List<int[][]> networkToMatrixes(SimpleDirectedWeightedGraph<CompNode, NetworkLink> network){
+	public int networkToMatrixes(double cap[][],  int cost[][], SimpleDirectedWeightedGraph<CompNode, NetworkLink> network){
 	    int n = network.vertexSet().size(); //number of nodes
-	    int cap[][] = new int[n][n];
-	    int cost[][] = new int[n][n];
+	    //double cap[][] = new double[n][n];
+	    //int cost[][] = new int[n][n];
 	    for (int k = 0; k < n; k++ ){
 		for(int l = 0; l<n; l++){
 		    cap[k][l] = 0;
@@ -197,27 +197,25 @@ public class DataProductionPlanner {
 	    for (NetworkLink link: network.edgeSet()){
 		i = network.getEdgeSource(link).getIndex();
 		j = network.getEdgeTarget(link).getIndex();
-		cap[i][j] = (int) network.getEdgeWeight(link);
+		cap[i][j] = network.getEdgeWeight(link);
 		cost[i][j] = link.getCost();	  
 	    }
 	    
-	    List<int[][]> result = new ArrayList();
-	    result.add(cap);
-	    result.add(cost);
-	    return result;    
+	    //Pair<double[][], int[][]> result = new ArrayList();
+	    //result.add(cap);
+	    //result.add(cost);
+	    return n;    
 	}
 	
 	public void solveOutputProblemWithCost(){
 	    MinCostMaxFlow solver = new MinCostMaxFlow(); //Solver for Minimum cost maximum flow problem.
-	    List<int[][]> matrixes;
-	    int[][] cap;
-	    int[][] cost;
+	    int n = this.outputNetwork.vertexSet().size();
+	    double[][] cap = new double[n][n] ;
+	    int[][] cost = new int[n][n] ;
 	    // transform output problem into matrixes	 
-	    matrixes = networkToMatrixes(this.outputNetwork);
-	    cap = matrixes.get(0);
-	    cost = matrixes.get(1);
+	    networkToMatrixes(cap, cost, this.outputNetwork);
 	    //solve output problem
-	    int outputSolution[][] = solver.getMaxFlow(cap, cost, this.source.getIndex(), this.sink.getIndex());
+	    double[][] outputSolution = solver.getMaxFlow(cap, cost, this.source.getIndex(), this.sink.getIndex());
 	    //transform solution into JGraphT representation    
 	    if (outputSolution.length != this.outputNetwork.edgeSet().size() ){
 		logger.log(Level.SEVERE,"Output solution: wrong number of nodes");
@@ -233,19 +231,18 @@ public class DataProductionPlanner {
 		}
 	    }
 	    //logger.log( Level.INFO,"OUTPUT NETWORK SETUP");	
-	    //this.PrintNetworkSetup(this.outputNetwork);	
+	    this.PrintNetworkSetup(this.outputNetwork);	
 	}
 	
 	public void solveInputProblemWithCost(){
 	    MinCostMaxFlow solver = new MinCostMaxFlow(); //Solver for Minimum cost maximum flow problem.
-	    List<int[][]> matrixes;
-	    int[][] cap;
-	    int[][] cost;
-	    matrixes = networkToMatrixes(this.inputNetwork);
-	    cap = matrixes.get(0);
-	    cost = matrixes.get(1);	    
+	    int n = this.inputNetwork.vertexSet().size();
+	    double[][] cap = new double[n][n] ;
+	    int[][] cost = new int[n][n] ;
+	    networkToMatrixes(cap, cost, this.inputNetwork);
+    
 	    //solve input problem
-	    int inputSolution[][] = solver.getMaxFlow(cap, cost, this.source.getIndex(), this.sink.getIndex());	    
+	    double[][] inputSolution = solver.getMaxFlow(cap, cost, this.source.getIndex(), this.sink.getIndex());	    
 	    if (inputSolution.length != this.inputNetwork.edgeSet().size() ){
 		logger.log(Level.SEVERE,"Input solution: wrong number of nodes: " + inputSolution.length);
 		display("ERROR: Input solution: wrong number of nodes");
@@ -261,7 +258,7 @@ public class DataProductionPlanner {
 
 	    }
 	    //logger.log( Level.INFO,"INPUT NETWORK SETUP");	
-	    //this.PrintNetworkSetup(this.inputNetwork);	
+	    this.PrintNetworkSetup(this.inputNetwork);	
 	}
 	
 	/**
@@ -458,12 +455,12 @@ public class DataProductionPlanner {
 		for (CompNode node: this.grid.vertexSet()){
 			this.outputNetwork.addVertex(node);
 			if (node.isOutputDestination()){
-				dummyEdgeQ = new NetworkLink(this.i--, "dummy_edge_Q", node.getId(), this.sink.getId(), 0, true); //edge from output destination to dummy sink
+				dummyEdgeQ = new NetworkLink(this.i--, node.getName() +"->t", node.getId(), this.sink.getId(), 0, true); //edge from output destination to dummy sink
 				this.outputNetwork.addEdge(node, this.sink, dummyEdgeQ); 	
 				this.outputNetwork.setEdgeWeight(dummyEdgeQ, node.getOutputCanStore());				
 			}
 			if (node.isOutputSource()){
-				dummyEdgeD = new NetworkLink(this.i--, "dummy_edge_D",this.source.getId(), node.getId(), 0, true); //dummy edge from source to processing node
+				dummyEdgeD = new NetworkLink(this.i--, "s->"+node.getName(),this.source.getId(), node.getId(), 0, true); //dummy edge from source to processing node
 				this.outputNetwork.addEdge(this.source, node, dummyEdgeD); 		
 				this.outputNetwork.setEdgeWeight(dummyEdgeD, node.getOutputWeight(this.deltaT, this.beta));
 			}	
@@ -512,14 +509,14 @@ public class DataProductionPlanner {
 		for (CompNode node: this.grid.vertexSet()){
 			this.inputNetwork.addVertex(node);
 			if (node.isInputSource()){
-				dummyEdgeQ = new NetworkLink(this.i--, "dummy_edge_Q", this.source.getId(), node.getId(), 0, true);
+				dummyEdgeQ = new NetworkLink(this.i--, "s->"+node.getName(), this.source.getId(), node.getId(), 0, true);
 				this.inputNetwork.addEdge(this.source, node, dummyEdgeQ); //dummy edge from source to input storage	
 				this.inputNetwork.setEdgeWeight(dummyEdgeQ, node.getInputCanProvide());
-				dummyEdgeQ.setCost(-1); //set cost to balance source usage
+				dummyEdgeQ.setCost((int)node.getInputCanProvide()/1000000); //set cost to balance source usage
 				
 			}
 			if (node.isInputDestination()){
-				dummyEdgeD = new NetworkLink(this.i--, "dummy_edge_D", node.getId(), this.sink.getId(), 0, true);
+				dummyEdgeD = new NetworkLink(this.i--, node.getName()+"->t", node.getId(), this.sink.getId(), 0, true);
 				this.inputNetwork.addEdge(node, this.sink, dummyEdgeD); //dummy edge from processing node to sink			
 				this.inputNetwork.setEdgeWeight(dummyEdgeD, node.getInputWeight(this.deltaT, this.beta));
 			}	
@@ -581,14 +578,19 @@ public class DataProductionPlanner {
 	public void PrintNetworkSetup(SimpleDirectedWeightedGraph<CompNode, NetworkLink> g){
 	        StringBuffer buf = new StringBuffer();
 	        buf.append("~~~~~~~~~~~~~~~~~~~~~~~NETWORK SETUP~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-	        buf.append("VERTEXES: \n");		
+	        buf.append("VERTEXES: \n");	
+	        buf.append(CompNode.getFormatedHeader() + "\n");	
+	        
 		for (CompNode node: g.vertexSet()){
-		    buf.append(node.toFormatedString()+ "\n");
+		    buf.append(node.toFormatedString2()+ "\n");
 		}
 		buf.append("\n");	
-		buf.append("EDGES: \n");	
+		buf.append("EDGES: \n");
+		buf.append(NetworkLink.getFormatedHeader() + "\n");
+		
 		for (NetworkLink link: g.edgeSet()){
-		    buf.append(link.toFormatedString() + "\n");
+		    link.setCapacity(deltaT);
+		    buf.append(link.toFormatedString2() + "\n");
 		}
 		buf.append("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
 		logger.log(Level.INFO, buf.toString());
@@ -638,8 +640,8 @@ public class DataProductionPlanner {
 	}
 	
 	// Write any graph to odt
-	public void WriteODT(SimpleDirectedWeightedGraph<CompNode, NetworkLink> g ,String outputFilename){
-		LinkAttributeProvider linkAttributes = new LinkAttributeProvider(g); //attributes for links. Is separete because we can get real weights from graph only
+	public void WriteODT(int type, SimpleDirectedWeightedGraph<CompNode, NetworkLink> g ,String outputFilename){
+		LinkAttributeProvider linkAttributes = new LinkAttributeProvider(type, g); //attributes for links. Is separete because we can get real weights from graph only
 	    DOTExporter<CompNode, NetworkLink> export=new DOTExporter<CompNode, NetworkLink>(nodeIds, nodeNames, linkNames, nodeAttributes, linkAttributes);
 	    
 	    //DOTExporter<CompNode, NetworkLink> export=new DOTExporter<CompNode, NetworkLink>();
@@ -653,17 +655,25 @@ public class DataProductionPlanner {
 	}	
 	
 	public void WriteGridODT(String outputFilename){
-		this.WriteODT(this.grid, outputFilename);		
+		this.WriteODT(LinkAttributeProvider.BANDWIDTH, this.grid, outputFilename);		
 	}
 	
-	public void WriteInputNetworkODT(String outputFilename){
-		this.WriteODT(this.inputNetwork, outputFilename);		
+	public void WriteSolutionODT(String outputFilename){
+		this.WriteODT(LinkAttributeProvider.SOLUTION, this.grid, outputFilename);		
 	}
 	
-	public void WriteOutputNetworkODT(String outputFilename){
-		this.WriteODT(this.outputNetwork, outputFilename);	
+	public void WriteInputODT(String outputFilename){
+		this.WriteODT(LinkAttributeProvider.INPUT, this.grid, outputFilename);		
 	}
 	
+	public void WriteOutputODT(String outputFilename){
+		this.WriteODT(LinkAttributeProvider.OUTPUT, this.grid, outputFilename);		
+	}
+	
+	public void WriteCapacityODT(String outputFilename){
+		this.WriteODT(LinkAttributeProvider.CAPACITY, this.grid, outputFilename);		
+	}
+
 	private void display(String string) {
 	    if (this.printToConsole){
 		System.out.println(string);

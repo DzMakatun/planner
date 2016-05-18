@@ -328,6 +328,69 @@ public class CompNode {
 			
 		return sb.toString();
 	}
+	
+	public static String getFormatedHeader(){
+	        //String patterm = "%12s ";
+		StringBuffer sb = new StringBuffer();
+		sb.append( String.format("%10s %20s ","id","name") );
+		sb.append("type  ");
+		sb.append("role ");				
+		sb.append( "      disk " );
+		sb.append( "      cpuN " );
+		sb.append( "     alpha " );
+		sb.append( "     minOut " );
+		sb.append( "  waitingIn " );
+		sb.append( "   readyOut " );
+		sb.append( "   inWeight " );
+		sb.append( "  outWeight " );
+		sb.append( "  inProvide " );
+		sb.append( " outCanStor " );		
+		sb.append( " nettoInput " );
+		sb.append( "nettoOutput " );	
+			
+		return sb.toString();
+	}
+	
+	public String toFormatedString2() {
+		StringBuffer sb = new StringBuffer();
+		sb.append( String.format("%10d %20s ",id,name) );
+		if (this.isDummy)
+			sb.append("dummy ");
+		else			
+			sb.append("real  ");
+		
+		if (this.isInputSource)
+			sb.append("1");
+		else			
+			sb.append("0");
+		if (this.isOutputDestination)
+			sb.append("1");
+		else			
+			sb.append("0");
+		if (this.isInputDestination)
+			sb.append("1");
+		else			
+			sb.append("0");
+		if (this.isOutputSource)
+			sb.append("1");
+		else			
+			sb.append("0");
+				
+		sb.append( String.format(" %10d ",disk) );
+		sb.append( String.format("%10d ",cpuN) );
+		sb.append( String.format("%10f ",alpha) );
+		sb.append( String.format("%11d ",minOut) );
+		sb.append( String.format("%11d ",waitingInputSize) );
+		sb.append( String.format("%11d ",readyOutputSize) );
+		sb.append( String.format("%11.0f ",inputWeight) );
+		sb.append( String.format("%11.0f ",outputWeight) );
+		sb.append( String.format("%11.0f ",inputCanProvide) );
+		sb.append( String.format("%11.0f ",outputCanStore) );		
+		sb.append( String.format("%11.0f ",nettoInputFlow) );
+		sb.append( String.format("%11.0f ",nettoOutputFlow) );	
+			
+		return sb.toString();
+	}
 
 	//comparison of two nodes
 	@Override 
