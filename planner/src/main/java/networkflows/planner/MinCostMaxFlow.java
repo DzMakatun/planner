@@ -107,7 +107,7 @@ public class MinCostMaxFlow {
 	}
 	
 	//return new int[]{ totflow, totcost };
-	
+	/**
 	System.out.println("Capacity: " + Arrays.deepToString(cap));
 	System.out.println("Cost: " + Arrays.deepToString(cost));
 	System.out.println("Source: " + source + " Sink: " + sink);
@@ -115,7 +115,7 @@ public class MinCostMaxFlow {
 	System.out.println("Total flow: " + totflow + " Total cost: " + totcost);
 	System.out.println("Flow: " + Arrays.deepToString(flow));
 	System.out.println("\n");
-	
+	**/
 	return flow;
  }
 

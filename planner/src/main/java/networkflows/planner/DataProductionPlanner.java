@@ -14,8 +14,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.FileHandler;
@@ -35,7 +39,7 @@ public class DataProductionPlanner {
 	
 	//add logger
 	private static final Logger logger = Logger.getLogger( DataProductionPlanner.class.getName() );
-	private static final boolean printToConsole = true;
+	private static final boolean printToConsole = false;
 	private static FileHandler fh;
 	private static SimpleFormatter formatter;
 	
@@ -187,12 +191,15 @@ public class DataProductionPlanner {
 	    }
 	    //enumerate vertices
 	    int i = 0;
+	    StringBuffer br = new StringBuffer();
+	    br.append("Min-cost-max-flow vertex enymeration: ");
 	    for(CompNode node: network.vertexSet()){
 		node.setIndex(i);
-		logger.log(Level.INFO, node.getName() +" " + i);
-		display(node.getName() +" " + i);
+		br.append(i + "-" +node.getName() + " ");
 		i++;
 	    }
+	    logger.log(Level.INFO, br.toString());
+            display(br.toString());
 	    int j;
 	    for (NetworkLink link: network.edgeSet()){
 		i = network.getEdgeSource(link).getIndex();
@@ -217,10 +224,6 @@ public class DataProductionPlanner {
 	    //solve output problem
 	    double[][] outputSolution = solver.getMaxFlow(cap, cost, this.source.getIndex(), this.sink.getIndex());
 	    //transform solution into JGraphT representation    
-	    if (outputSolution.length != this.outputNetwork.edgeSet().size() ){
-		logger.log(Level.SEVERE,"Output solution: wrong number of nodes");
-		display("ERROR: Output solution: wrong number of nodes");
-	    }
 	    int i,j;
 	    for(NetworkLink link: this.outputNetwork.edgeSet()){
 		i = outputNetwork.getEdgeSource(link).getIndex();
@@ -230,8 +233,8 @@ public class DataProductionPlanner {
 			this.outputNetwork.getEdgeTarget(link).setNettoOutputFlow(outputSolution[i][j]); //write neto output flow to comp node
 		}
 	    }
-	    //logger.log( Level.INFO,"OUTPUT NETWORK SETUP");	
-	    this.PrintNetworkSetup(this.outputNetwork);	
+	    //logger.log( Level.INFO,"OUTPUT PROBLEM");	
+	    //this.PrintNetworkSetup(this.outputNetwork);	
 	}
 	
 	public void solveInputProblemWithCost(){
@@ -243,10 +246,6 @@ public class DataProductionPlanner {
     
 	    //solve input problem
 	    double[][] inputSolution = solver.getMaxFlow(cap, cost, this.source.getIndex(), this.sink.getIndex());	    
-	    if (inputSolution.length != this.inputNetwork.edgeSet().size() ){
-		logger.log(Level.SEVERE,"Input solution: wrong number of nodes: " + inputSolution.length);
-		display("ERROR: Input solution: wrong number of nodes");
-	    }
 	    int i,j;
 	    for(NetworkLink link: this.inputNetwork.edgeSet()){
 		i = inputNetwork.getEdgeSource(link).getIndex();
@@ -258,7 +257,7 @@ public class DataProductionPlanner {
 
 	    }
 	    //logger.log( Level.INFO,"INPUT NETWORK SETUP");	
-	    this.PrintNetworkSetup(this.inputNetwork);	
+	    //this.PrintNetworkSetup(this.inputNetwork);	
 	}
 	
 	/**
@@ -500,8 +499,34 @@ public class DataProductionPlanner {
 		return solver.getMaximumFlowValue();
 	}
 	
+	public void setInputSourcesCosts( SimpleDirectedWeightedGraph<CompNode, NetworkLink> network){
+	    logger.log( Level.INFO,"Setting input costs");	
+	    LinkedList<CompNode> list = new LinkedList<CompNode>();
+	    //select input sources
+	    for (CompNode node: network.vertexSet()){
+		if (node.isInputSource()){
+		   list.add(node); 
+		}
+	    }	    
+	    Collections.sort(list, new Comparator<CompNode>() {
+	        public int compare(CompNode n1, CompNode n2) {
+	            return  - new Double(n1.getInputCanProvide()).compareTo( n2.getInputCanProvide());
+	        }
+	    });    
+	    
+	    int i = 0;
+	    display("setting costs:");
+	    for(CompNode node: list){
+		node.setInputSourceCost(i);
+		i++;
+	    }
+
+	    
+	}
+	
 	public void CreateInputNetwork(){
 		DataProductionPlanner.logger.log( Level.INFO, "Creating input network");
+		setInputSourcesCosts(this.grid);//calculate costs for sources
 		NetworkLink dummyEdgeQ, dummyEdgeD;		
 		this.inputNetwork.addVertex(this.source);
 		this.inputNetwork.addVertex(this.sink);		
@@ -512,7 +537,7 @@ public class DataProductionPlanner {
 				dummyEdgeQ = new NetworkLink(this.i--, "s->"+node.getName(), this.source.getId(), node.getId(), 0, true);
 				this.inputNetwork.addEdge(this.source, node, dummyEdgeQ); //dummy edge from source to input storage	
 				this.inputNetwork.setEdgeWeight(dummyEdgeQ, node.getInputCanProvide());
-				dummyEdgeQ.setCost((int)node.getInputCanProvide()/1000000); //set cost to balance source usage
+				dummyEdgeQ.setCost(node.getInputSourceCost()); //set cost to balance source usage
 				
 			}
 			if (node.isInputDestination()){

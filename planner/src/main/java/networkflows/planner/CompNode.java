@@ -52,6 +52,7 @@ public class CompNode {
 	private double incomingOutputFlow;
 	private double nettoOutputFlow;
 	private double localProcessingFlow;
+	private int inputSourceCost = 0;
 	
 	//constructor TO DO
 	/*public CompNode(int id, String name, boolean isInputSource,
@@ -460,6 +461,14 @@ public class CompNode {
 	this.localProcessingFlow = localProcessingFlow;
     }
 
+    public void setInputSourceCost(int inputSourceCost) {
+	this.inputSourceCost = inputSourceCost;
+	
+    }
+
+    public int getInputSourceCost() {
+	return this.inputSourceCost;	
+    }
 
 
 }
