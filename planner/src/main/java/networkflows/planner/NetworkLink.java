@@ -56,6 +56,7 @@ public class NetworkLink extends DefaultWeightedEdge{
 	public void clean(){
 	    this.inputFlow = 0;
 	    this.outputFlow = 0;
+	    this.cost = 0;
 	}
 	
 	//constructor from string

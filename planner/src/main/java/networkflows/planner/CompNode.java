@@ -116,6 +116,8 @@ public class CompNode {
 		this.outputCanStore = outputCanStore;
 		
 		this.currentFreeSpace = disk - waitingInputSize - readyOutputSize;
+		this.nettoInputFlow = 0;
+		this.nettoOutputFlow = 0;
 	}
 	
 	/**
@@ -137,8 +139,8 @@ public class CompNode {
 		return this.nettoOutputFlow;
 	}
 
-	public void setNettoOutputFlow(double nettoOutputFlow) {
-		this.nettoOutputFlow = nettoOutputFlow;
+	public void addOutputFlow(double outputFlow) {
+		this.nettoOutputFlow += outputFlow;
 	}
 
 	
@@ -147,8 +149,8 @@ public class CompNode {
 		return this.nettoInputFlow;
 	}
 
-	public void setNettoInputFlow(double nettoInputFlow) {
-		this.nettoInputFlow = nettoInputFlow;
+	public void addInputFlow(double inputFlow) {
+		this.nettoInputFlow += inputFlow;
 	}
 
 	private void CalculateOutputWeight(int deltaT, float beta){
@@ -346,8 +348,8 @@ public class CompNode {
 		sb.append( "  outWeight " );
 		sb.append( "  inProvide " );
 		sb.append( " outCanStor " );		
-		sb.append( " nettoInput " );
-		sb.append( "nettoOutput " );	
+		sb.append( " nettoInFlow " );
+		sb.append( "nettoOutFlow " );	
 			
 		return sb.toString();
 	}
@@ -387,8 +389,8 @@ public class CompNode {
 		sb.append( String.format("%11.0f ",outputWeight) );
 		sb.append( String.format("%11.0f ",inputCanProvide) );
 		sb.append( String.format("%11.0f ",outputCanStore) );		
-		sb.append( String.format("%11.0f ",nettoInputFlow) );
-		sb.append( String.format("%11.0f ",nettoOutputFlow) );	
+		sb.append( String.format("%12.0f ",nettoInputFlow) );
+		sb.append( String.format("%12.0f ",nettoOutputFlow) );	
 			
 		return sb.toString();
 	}
@@ -435,6 +437,7 @@ public class CompNode {
 	outgoingOutputFlow = 0;
 	incomingOutputFlow = 0;
 	nettoOutputFlow = 0;	
+	inputSourceCost=0;
     }
 	
     

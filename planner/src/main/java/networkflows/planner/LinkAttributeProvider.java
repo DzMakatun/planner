@@ -17,23 +17,31 @@ public class LinkAttributeProvider implements ComponentAttributeProvider<Network
     public static final int WEIGHT = 7;    
     private int type = 0;
     
-	public LinkAttributeProvider(int type, Graph<CompNode,NetworkLink> graph){	
+	public LinkAttributeProvider(int type){	
 	    this.type=type;
 	}
 	
 	public Map<String, String> getComponentAttributes(NetworkLink link) {
 		Map<String, String> map =new LinkedHashMap<String, String>();
-	map.put("splines", "curved");
+	//map.put("splines", "curved");
         map.put("isDummy", Boolean.toString(link.isDummy()));
         map.put("bandwidth", Double.toString(link.getBandwidth()));
         map.put("inputFlow", Double.toString(link.getInputFlow()));
         map.put("outputFlow", Double.toString(link.getOutputFlow()));
         map.put("capacity", Double.toString(link.getCapacity()));
+        
+        map.put("dir", "forward");
+        map.put("arrowType", "normal");
+        map.put("arrowhead", "normal");
+        map.put("style", "dashed");
+        
+
 
         
-        String weight, color;
+        String color;
+        double weight;
         switch (this.type) {
-          case BANDWIDTH:  weight = Double.toString(link.getBandwidth() );
+          case BANDWIDTH:  weight =link.getBandwidth();
           		   color = "black";
                            break;
           case SOLUTION:   if (link.getInputFlow() > 0){
@@ -49,15 +57,17 @@ public class LinkAttributeProvider implements ComponentAttributeProvider<Network
                         	   color = "grey";
                                }  
                            }
-                           weight = Double.toString(Math.max(link.getInputFlow(), link.getOutputFlow() ) );
+                           weight = link.getInputFlow() + link.getOutputFlow();
+                           if (weight == 0 ){ weight = 1.0;}
                            break;
 
                  
-          default: weight = Double.toString(link.getBandwidth() );  
+          default: weight = link.getBandwidth();  
           	   color = "black";
                    break;
         }
-        map.put("weight", weight);
+        
+        map.put("weight", Double.toString(weight));
         map.put("color", color);
 		return map;
 	}

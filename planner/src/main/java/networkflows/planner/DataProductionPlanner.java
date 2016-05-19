@@ -39,7 +39,7 @@ public class DataProductionPlanner {
 	
 	//add logger
 	private static final Logger logger = Logger.getLogger( DataProductionPlanner.class.getName() );
-	private static final boolean printToConsole = false;
+	private static final boolean printToConsole = true;
 	private static FileHandler fh;
 	private static SimpleFormatter formatter;
 	
@@ -53,7 +53,7 @@ public class DataProductionPlanner {
 	private static NodeIdProvider nodeIds=new NodeIdProvider(); //node ids correspond to those in input file
 	private static NodeNameProvider nodeNames=new NodeNameProvider(); //node names correspond to those in input file
 	private static LinkNameProvider linkNames = new LinkNameProvider(); //link names are ids + name  from input file
-	private static NodeAttributeProvider nodeAttributes = new NodeAttributeProvider(); //attributes for nodes
+	
 	
 	//solution parameters
 	private int deltaT;
@@ -230,11 +230,12 @@ public class DataProductionPlanner {
 		j = outputNetwork.getEdgeTarget(link).getIndex();
 		link.setOutputFlow(outputSolution[i][j]);			//propagate the solution to this. instance of network
 		if (link.isDummy()){
-			this.outputNetwork.getEdgeTarget(link).setNettoOutputFlow(outputSolution[i][j]); //write neto output flow to comp node
+			this.outputNetwork.getEdgeTarget(link).addOutputFlow(- outputSolution[i][j]); //add output flow to comp node
+			this.outputNetwork.getEdgeSource(link).addOutputFlow(outputSolution[i][j]); //add output flow to comp node
 		}
 	    }
-	    //logger.log( Level.INFO,"OUTPUT PROBLEM");	
-	    //this.PrintNetworkSetup(this.outputNetwork);	
+	    logger.log( Level.INFO,"OUTPUT PROBLEM");	
+	    this.PrintNetworkSetup(this.outputNetwork);	
 	}
 	
 	public void solveInputProblemWithCost(){
@@ -252,12 +253,13 @@ public class DataProductionPlanner {
 		j = inputNetwork.getEdgeTarget(link).getIndex();
 		link.setInputFlow(inputSolution[i][j]);			//propagate the solution to this. instance of network
 		if (link.isDummy()){
-		    this.inputNetwork.getEdgeSource(link).setNettoInputFlow(inputSolution[i][j]); //write netto input flow to comp node
+		    this.inputNetwork.getEdgeSource(link).addInputFlow(inputSolution[i][j]); //write netto input flow to comp node
+		    this.inputNetwork.getEdgeTarget(link).addInputFlow( - inputSolution[i][j]);
 		}
 
 	    }
-	    //logger.log( Level.INFO,"INPUT NETWORK SETUP");	
-	    //this.PrintNetworkSetup(this.inputNetwork);	
+	    logger.log( Level.INFO,"INPUT NETWORK SETUP");	
+	    this.PrintNetworkSetup(this.inputNetwork);	
 	}
 	
 	/**
@@ -269,14 +271,16 @@ public class DataProductionPlanner {
 	    long start = System.nanoTime(); 
 	    logger.log(Level.INFO, "\n \n \n @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@ \n "
 	    	+ "NEW ITERATION");
-	    double outputFlow = 0;
-	    double inputFlow = 0;
+	    
 	    CreateOutputNetwork();
 	    solveOutputProblemWithCost();
 	    //PrintGridSetup();
 	    CreateInputNetwork();
 	    solveInputProblemWithCost();
 	    long end = System.nanoTime();
+	    
+	    double outputFlow = source.getNettoOutputFlow();
+	    double inputFlow = source.getNettoInputFlow();
 	    PrintGridSetup();
 	    logger.log(Level.INFO,"\n &&&&&&&&&&&&&&&   solving time = " + ((double) end - start)/1000000000.0 
 		    + " seconds  &&&&&&&&&&&&&&& \n" );
@@ -491,11 +495,12 @@ public class DataProductionPlanner {
 		for(NetworkLink edge: this.outputNetwork.edgeSet()){
 			edge.setOutputFlow(solution.get(edge));			//propagate the solution to this. instance of network
 			if (edge.isDummy()){
-				this.outputNetwork.getEdgeTarget(edge).setNettoOutputFlow(solution.get(edge)); //write neto output flow to comp node
+				this.outputNetwork.getEdgeTarget(edge).addOutputFlow(- solution.get(edge)); //write neto output flow to comp node
+				this.outputNetwork.getEdgeSource(edge).addOutputFlow(solution.get(edge)); //add output flow to comp node
 			}
 		}
 		logger.log( Level.INFO,"OUTPUT NETWORK SETUP");	
-		//this.PrintNetworkSetup(this.outputNetwork);	
+		this.PrintNetworkSetup(this.outputNetwork);	
 		return solver.getMaximumFlowValue();
 	}
 	
@@ -570,11 +575,12 @@ public class DataProductionPlanner {
 		for(NetworkLink edge: this.inputNetwork.edgeSet()){
 			edge.setInputFlow(solution.get(edge));			//propagate the solution to this. instance of network
 			if (edge.isDummy()){
-				this.inputNetwork.getEdgeSource(edge).setNettoInputFlow(solution.get(edge)); //write neto input flow to comp node
+				this.inputNetwork.getEdgeSource(edge).addInputFlow(solution.get(edge)); //write neto input flow to comp node
+				this.inputNetwork.getEdgeTarget(edge).addInputFlow( - solution.get(edge));
 			}
 		}
 		logger.log( Level.INFO,"INPUT NETWORK SETUP");	
-		//this.PrintNetworkSetup(this.inputNetwork);		
+		this.PrintNetworkSetup(this.inputNetwork);		
 		return solver.getMaximumFlowValue();
 	}
 	
@@ -599,6 +605,8 @@ public class DataProductionPlanner {
 			node.setOutgoingOutputFlow(outgoingOutputFlow);
 		}
 	}
+	
+
 	
 	public void PrintNetworkSetup(SimpleDirectedWeightedGraph<CompNode, NetworkLink> g){
 	        StringBuffer buf = new StringBuffer();
@@ -666,7 +674,8 @@ public class DataProductionPlanner {
 	
 	// Write any graph to odt
 	public void WriteODT(int type, SimpleDirectedWeightedGraph<CompNode, NetworkLink> g ,String outputFilename){
-		LinkAttributeProvider linkAttributes = new LinkAttributeProvider(type, g); //attributes for links. Is separete because we can get real weights from graph only
+	    NodeAttributeProvider nodeAttributes = new NodeAttributeProvider(type); //attributes for nodes
+	    LinkAttributeProvider linkAttributes = new LinkAttributeProvider(type); //attributes for links. Is separete because we can get real weights from graph only
 	    DOTExporter<CompNode, NetworkLink> export=new DOTExporter<CompNode, NetworkLink>(nodeIds, nodeNames, linkNames, nodeAttributes, linkAttributes);
 	    
 	    //DOTExporter<CompNode, NetworkLink> export=new DOTExporter<CompNode, NetworkLink>();
