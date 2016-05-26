@@ -12,6 +12,7 @@ import org.jgrapht.graph.DefaultWeightedEdge;
 
 public class NetworkLink extends DefaultWeightedEdge{
 	//inherits double private weight from superclass 
+    	static public final int DEFAULT_COST = 1;
 	private int id;
 	private String name;	
 	private boolean isDummy;
@@ -50,13 +51,15 @@ public class NetworkLink extends DefaultWeightedEdge{
 		this.endNodeId = endNodeId;
 		this.bandwidth = bandwidth;
 		this.isDummy = isDummy;
-		this.cost = 0;
+		this.cost = DEFAULT_COST;
 	}
 	
 	public void clean(){
 	    this.inputFlow = 0;
 	    this.outputFlow = 0;
-	    this.cost = 0;
+	    this.cost = DEFAULT_COST;
+	    this.capacity = 0;
+	    this.excess = 0;
 	}
 	
 	//constructor from string
@@ -71,7 +74,7 @@ public class NetworkLink extends DefaultWeightedEdge{
 		this.endNodeId = Integer.parseInt(row[3]);
 		this.bandwidth = Double.parseDouble(row[4]);
 		this.isDummy = false;
-		this.cost = 0;
+		this.cost = DEFAULT_COST;
 	}
 
 	@Override
@@ -155,10 +158,19 @@ public class NetworkLink extends DefaultWeightedEdge{
 		sb.append( String.format("%10d -> %-10d ",beginNodeId,endNodeId) );//(beginNodeId + "->"+ endNodeId + " ");		
 		sb.append( String.format("%10.0f ",bandwidth) );
 		sb.append( String.format("%4d   ",cost) );
-		sb.append( String.format("%10.0f ",capacity) );
+		if (capacity == Double.MAX_VALUE ){
+		    sb.append( String.format("%10s ","infinite") );
+		}else{
+		    sb.append( String.format("%10.0f ",capacity) );
+		}		
 		sb.append( String.format("%10.0f ",inputFlow) );
 		sb.append( String.format("%10.0f ",outputFlow) );
-		sb.append( String.format("%10.0f ", this.getExcess()) );	
+		if (this.capacity == Double.MAX_VALUE ){
+		    sb.append( String.format("%10s ","infinite") );
+		}else{
+		    sb.append( String.format("%10.0f ", this.getExcess()) );
+		}
+			
 		return sb.toString();
 	}
 

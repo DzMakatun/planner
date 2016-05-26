@@ -25,6 +25,20 @@ public class CompNode {
 	//values to calculate capacities of dummy edges
 	private long disk; //available storage space
 	private int cpuN; //number of cpus
+	/**
+	 * @return the cpuN
+	 */
+	public int getCpuN() {
+	    return cpuN;
+	}
+
+	/**
+	 * @return the alpha
+	 */
+	public float getAlpha() {
+	    return alpha;
+	}
+
 	private float alpha; //time to process one unit of data
 	private long minOut; //minimal amount of output data (reserved by running jobs)	
 	private long waitingInputSize;
@@ -471,6 +485,13 @@ public class CompNode {
 
     public int getInputSourceCost() {
 	return this.inputSourceCost;	
+    }
+    
+    public double getEstimatedProcessingThroughput(int time){
+	if (this.isInputDestination){
+	    return time * this.cpuN /this.alpha;
+	}
+	return 0;
     }
 
 

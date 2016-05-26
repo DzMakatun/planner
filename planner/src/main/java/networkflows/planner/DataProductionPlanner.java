@@ -44,6 +44,7 @@ public class DataProductionPlanner {
 	private static SimpleFormatter formatter;
 	
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> grid = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
+	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> preplaningNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> inputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
 	private SimpleDirectedWeightedGraph<CompNode, NetworkLink> outputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
 	private CompNode source = new CompNode(Integer.MAX_VALUE, "s", true, false, false, false, false, 0, 0, 1, 0, 0, 0, 0, 0 );
@@ -140,15 +141,28 @@ public class DataProductionPlanner {
 	    //reset input/output problem entities
 	    inputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
 	    outputNetwork = new SimpleDirectedWeightedGraph<CompNode, NetworkLink>(NetworkLink.class);
-	    
+	    this.source.clean();
+	    this.sink.clean();
 	    //clean links
 	    for(NetworkLink link : grid.edgeSet()){
 		link.clean();
 	    }
-	    
+	    //clean nodes
 	    for(CompNode node : grid.vertexSet()){
 		node.clean();
-	    }	    
+	    }
+	    
+	}
+	
+	public void cleanPreplaning(){
+	    //clean links
+	    for(NetworkLink link : this.preplaningNetwork.edgeSet()){
+		link.clean();
+	    }
+	    //clean nodes
+	    for(CompNode node : this.preplaningNetwork.vertexSet()){
+		node.clean();
+	    }
 	}
 	
 	/**
@@ -199,7 +213,7 @@ public class DataProductionPlanner {
 		i++;
 	    }
 	    logger.log(Level.INFO, br.toString());
-            display(br.toString());
+            //display(br.toString());
 	    int j;
 	    for (NetworkLink link: network.edgeSet()){
 		i = network.getEdgeSource(link).getIndex();
@@ -243,8 +257,7 @@ public class DataProductionPlanner {
 	    int n = this.inputNetwork.vertexSet().size();
 	    double[][] cap = new double[n][n] ;
 	    int[][] cost = new int[n][n] ;
-	    networkToMatrixes(cap, cost, this.inputNetwork);
-    
+	    networkToMatrixes(cap, cost, this.inputNetwork);    
 	    //solve input problem
 	    double[][] inputSolution = solver.getMaxFlow(cap, cost, this.source.getIndex(), this.sink.getIndex());	    
 	    int i,j;
@@ -287,6 +300,133 @@ public class DataProductionPlanner {
 	    logger.log(Level.INFO, "END OF ITERATION" +
 	        "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n \n \n");
 	    return outputFlow + inputFlow;
+	}
+	
+	private void createPreplaningNetwork(){	    {
+		DataProductionPlanner.logger.log( Level.INFO, "Creating prepalnning network");		
+		NetworkLink dummyEdgeQ, dummyEdgeD;		
+		this.preplaningNetwork.addVertex(this.source);
+		this.preplaningNetwork.addVertex(this.sink);		
+		//add nodes and dummy edges to network
+		for (CompNode node: this.grid.vertexSet()){
+			this.preplaningNetwork.addVertex(node);
+			if (node.isInputSource()){
+				dummyEdgeQ = new NetworkLink(this.i--, "s->"+node.getName(), this.source.getId(), node.getId(), 0, true);
+				this.preplaningNetwork.addEdge(this.source, node, dummyEdgeQ); //dummy edge from source to input storage	
+				this.preplaningNetwork.setEdgeWeight(dummyEdgeQ, Double.MAX_VALUE); //infinite capacity for source links				
+				if (node.isOutputDestination()){ //for Tier-0 set cost 0, for the rest, set cost 1
+				    dummyEdgeQ.setCost(0);
+				}else{
+				    dummyEdgeQ.setCost(1);
+				}				
+			}
+			if (node.isInputDestination()){
+				dummyEdgeD = new NetworkLink(this.i--, node.getName()+"->t", node.getId(), this.sink.getId(), 0, true);
+				this.preplaningNetwork.addEdge(node, this.sink, dummyEdgeD); //dummy edge from processing node to sink			
+				this.preplaningNetwork.setEdgeWeight(dummyEdgeD, 0); //this capacities to be set separately
+			}	
+		}		
+		//add real network links to the network
+		CompNode bnode, enode; //temporary nodes for begin and end nodes of a link
+		for (NetworkLink link: this.grid.edgeSet()){
+			bnode = getNode(link.getBeginNodeId());
+			enode = getNode(link.getEndNodeId());
+			this.preplaningNetwork.addEdge(bnode, enode, link);
+			this.preplaningNetwork.setEdgeWeight(link, 0); //edge weight equals to Bandwidth * timeInteerval - output flow
+		}
+	}
+	}
+	
+	private int getEstimatedDataproductionTime(double inputDatasetSize){
+	    double throughput = 0.0;
+	    CompNode procNode;
+	    for(NetworkLink link: this.preplaningNetwork.edgesOf(this.sink)){
+		procNode = this.preplaningNetwork.getEdgeSource(link);
+		throughput += (double) procNode.getCpuN() / procNode.getAlpha();
+	    }	    
+	    return (int) ( inputDatasetSize / throughput);
+	}
+	
+	private void updatePreplaningCapacities(int time){
+	    for(NetworkLink link: this.preplaningNetwork.edgeSet()){
+		if ( !link.isDummy()){//real links
+		    this.preplaningNetwork.setEdgeWeight(link, link.getOutputWeight(time)); // bandwidth x time
+		}else{// dummy links
+		    if(link.getEndNodeId() == this.sink.getId()){
+			this.preplaningNetwork.setEdgeWeight(link, this.preplaningNetwork.getEdgeSource(link).getEstimatedProcessingThroughput(time));
+		    }
+		    
+		}
+	    }
+	}
+	
+	public void solvePreplanningProblemWithCost(){
+	    MinCostMaxFlow solver = new MinCostMaxFlow(); //Solver for Minimum cost maximum flow problem.
+	    int n = this.preplaningNetwork.vertexSet().size();
+	    double[][] cap = new double[n][n] ;
+	    int[][] cost = new int[n][n] ;
+	    networkToMatrixes(cap, cost, this.preplaningNetwork);    
+	    //solve input problem
+	    double[][] inputSolution = solver.getMaxFlow(cap, cost, this.source.getIndex(), this.sink.getIndex());	    
+	    int i,j;
+	    for(NetworkLink link: this.preplaningNetwork.edgeSet()){
+		i = preplaningNetwork.getEdgeSource(link).getIndex();
+		j = preplaningNetwork.getEdgeTarget(link).getIndex();
+		link.setInputFlow(inputSolution[i][j]);			//propagate the solution to this. instance of network
+		if (link.isDummy()){
+		    this.preplaningNetwork.getEdgeSource(link).addInputFlow(inputSolution[i][j]); //write netto input flow to comp node
+		    this.preplaningNetwork.getEdgeTarget(link).addInputFlow( - inputSolution[i][j]);
+		}
+
+	    }
+	    //logger.log( Level.INFO,"PREPLANNING NETWORK SETUP");	
+	    //this.PrintNetworkSetup(this.preplaningNetwork);	
+	}
+	
+	public void planInitialDataDistribution(double inputDatasetSize, float allowedError){
+	    int estimatedDataproductionTime;
+	    int oldDeltaT = this.deltaT;
+	    double inputFlow = 0.0;
+	    //construct network
+	    createPreplaningNetwork();
+	    //estimate data production time
+	    estimatedDataproductionTime = getEstimatedDataproductionTime(inputDatasetSize);
+	    this.deltaT = estimatedDataproductionTime; //for correct network statistics
+	    //display("Estimated time: " + estimatedDataproductionTime);
+	    int iterationNo = 0;
+	    while(Math.abs(inputDatasetSize - inputFlow) > inputDatasetSize * allowedError && iterationNo < 4){
+		iterationNo++;
+		
+		//update edge capacities 
+		cleanPreplaning();
+		updatePreplaningCapacities(estimatedDataproductionTime);
+		//solve preplaning problem
+		solvePreplanningProblemWithCost();
+		inputFlow = this.source.getNettoInputFlow();
+		//display("Iteration number " + iterationNo + " Estimated time: " + estimatedDataproductionTime +  " flow: " + inputFlow + " / " +  inputDatasetSize);
+		if (inputFlow ==0 ){
+		    display("Failed to plan initial data destribution");
+		    logger.log(Level.SEVERE,"Failed to plan initial data destribution");
+		    break;}
+		estimatedDataproductionTime = (int) (estimatedDataproductionTime * (inputDatasetSize / inputFlow));
+		this.deltaT = estimatedDataproductionTime; //for correct network statistics
+	    }	    
+	    logger.log(Level.INFO, "Planning initial data distribution complete: \n" + "Number of iterations" + iterationNo + " Estimated time: " + estimatedDataproductionTime +  " flow: " + inputFlow + " / " +  inputDatasetSize);
+	    PrintGridSetup();
+	    logger.log(Level.INFO,preplaningResultsToString(inputDatasetSize));
+	    display("Planning initial data distribution complete: \n" + "Number of iterations" + iterationNo + " Estimated time: " + estimatedDataproductionTime +  " flow: " + inputFlow + " / " +  inputDatasetSize); 
+	    display(preplaningResultsToString(inputDatasetSize) );
+	    this.deltaT = oldDeltaT;
+	}
+	
+	private String preplaningResultsToString(double inputDatasetSize){
+	    StringBuffer buf = new StringBuffer();
+	    buf.append("recommended initial input destribution: \n");
+	    for (NetworkLink link: this.preplaningNetwork.edgesOf(source)){
+		buf.append(this.preplaningNetwork.getEdgeTarget(link).getName() 
+			+ " " + 100 * link.getInputFlow()/inputDatasetSize + " % " + link.getInputFlow() + " units \n");
+	    }
+	    return buf.toString();
 	}
 	
 	/**
