@@ -489,7 +489,7 @@ public class CompNode {
     
     public double getEstimatedProcessingThroughput(int time){
 	if (this.isInputDestination){
-	    return time * this.cpuN /this.alpha;
+	    return time * (double)this.cpuN /this.alpha;
 	}
 	return 0;
     }

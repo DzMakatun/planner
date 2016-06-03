@@ -39,7 +39,7 @@ public class DataProductionPlanner {
 	
 	//add logger
 	private static final Logger logger = Logger.getLogger( DataProductionPlanner.class.getName() );
-	private static final boolean printToConsole = true;
+	private static final boolean printToConsole = false;
 	private static FileHandler fh;
 	private static SimpleFormatter formatter;
 	
@@ -393,10 +393,10 @@ public class DataProductionPlanner {
 	    estimatedDataproductionTime = getEstimatedDataproductionTime(inputDatasetSize);
 	    this.deltaT = estimatedDataproductionTime; //for correct network statistics
 	    //display("Estimated time: " + estimatedDataproductionTime);
+	    logger.log(Level.INFO,"First estimated time: " + estimatedDataproductionTime);
 	    int iterationNo = 0;
 	    while(Math.abs(inputDatasetSize - inputFlow) > inputDatasetSize * allowedError && iterationNo < 4){
-		iterationNo++;
-		
+		iterationNo++;		
 		//update edge capacities 
 		cleanPreplaning();
 		updatePreplaningCapacities(estimatedDataproductionTime);
@@ -412,7 +412,7 @@ public class DataProductionPlanner {
 		this.deltaT = estimatedDataproductionTime; //for correct network statistics
 	    }	    
 	    logger.log(Level.INFO, "Planning initial data distribution complete: \n" + "Number of iterations" + iterationNo + " Estimated time: " + estimatedDataproductionTime +  " flow: " + inputFlow + " / " +  inputDatasetSize);
-	    PrintGridSetup();
+	    PrintNetworkSetup(this.preplaningNetwork);
 	    logger.log(Level.INFO,preplaningResultsToString(inputDatasetSize));
 	    display("Planning initial data distribution complete: \n" + "Number of iterations" + iterationNo + " Estimated time: " + estimatedDataproductionTime +  " flow: " + inputFlow + " / " +  inputDatasetSize); 
 	    display(preplaningResultsToString(inputDatasetSize) );
@@ -853,6 +853,16 @@ public class DataProductionPlanner {
 		System.out.println(string);
 	    }
 	    
+	}
+
+	public double getMaxInputSize() {
+	    double datasetSize = 0;
+	    for (CompNode node: this.grid.vertexSet()){
+		if (node.isInputSource() && node.getInputCanProvide() > datasetSize){
+		    datasetSize = node.getInputCanProvide();
+		}
+	    }
+	    return datasetSize;
 	}
 
 }
