@@ -38,7 +38,7 @@ public class NodeAttributeProvider implements ComponentAttributeProvider<CompNod
                            break;
                            
                            
-          default: weight = 1000000.0; 
+          default: weight = (double) node.getCpuN(); 
                    break;
        }              
         map.put("weight",Double.toString(weight));

@@ -26,6 +26,13 @@ public class CompNode {
 	private long disk; //available storage space
 	private int cpuN; //number of cpus
 	/**
+	 * @return the disk
+	 */
+	public long getDisk() {
+	    return disk;
+	}
+
+	/**
 	 * @return the cpuN
 	 */
 	public int getCpuN() {

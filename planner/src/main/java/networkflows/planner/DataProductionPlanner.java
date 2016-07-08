@@ -30,6 +30,7 @@ import java.util.logging.SimpleFormatter;
 import org.jgrapht.alg.EdmondsKarpMaximumFlow;
 import org.jgrapht.ext.DOTExporter;
 import org.jgrapht.graph.SimpleDirectedWeightedGraph;
+import org.jgrapht.alg.FloydWarshallShortestPaths;
 
 import com.opencsv.CSVReader;
 
@@ -54,7 +55,7 @@ public class DataProductionPlanner {
 	private static NodeIdProvider nodeIds=new NodeIdProvider(); //node ids correspond to those in input file
 	private static NodeNameProvider nodeNames=new NodeNameProvider(); //node names correspond to those in input file
 	private static LinkNameProvider linkNames = new LinkNameProvider(); //link names are ids + name  from input file
-	
+	//private int gridDiameter = 0;
 	
 	//solution parameters
 	private int deltaT;
@@ -659,6 +660,10 @@ public class DataProductionPlanner {
 	        }
 	    });    
 	    
+	    //Double max = list.get(0).getInputCanProvide();
+	    //Double min = list.get(list.size()-1).getInputCanProvide();
+	    //int maxCost = 5;
+	    //Double step = (max - min) / maxCost;
 	    int i = 0;
 	    display("setting costs:");
 	    for(CompNode node: list){
