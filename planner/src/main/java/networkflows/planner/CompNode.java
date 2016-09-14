@@ -136,7 +136,7 @@ public class CompNode {
 		this.inputCanProvide = inputCanProvide;
 		this.outputCanStore = outputCanStore;
 		
-		this.currentFreeSpace = disk - waitingInputSize - readyOutputSize;
+		this.currentFreeSpace = disk - waitingInputSize - readyOutputSize; //fix it
 		this.nettoInputFlow = 0;
 		this.nettoOutputFlow = 0;
 	}
@@ -203,10 +203,9 @@ public class CompNode {
 		   
 	       }else{//saturated regime
 		   //dataCanProcess = (this.cpuN * deltaT) /  this.alpha; //input data that can be processed during the time interval
-		   dataCanProcess = this.submittedInputSize - this.waitingInputSize;
-		   if (dataCanProcess < 0){ dataCanProcess = 0; }
+		   dataCanProcess = this.submittedInputSize - this.waitingInputSize;		   
 	       }
-	       
+	       if (dataCanProcess < 0){ dataCanProcess = 0; }
 	       //the final weight is limited by the value that we can actually accommodate 
 	       this.inputWeight = Math.min(maxInputDataCanAccomodate, dataCanProcess);//Math.min(maxInputDataCanAccomodate, dataCanProcess);
 	       this.inputWeight = Math.max(this.processedInput, this.inputWeight); //transfer not less then was processed during last iteration
