@@ -29,6 +29,9 @@ import java.util.logging.SimpleFormatter;
 
 import org.jgrapht.alg.EdmondsKarpMaximumFlow;
 import org.jgrapht.ext.DOTExporter;
+import org.jgrapht.ext.EdgeNameProvider;
+import org.jgrapht.ext.GraphMLExporter;
+import org.jgrapht.ext.VertexNameProvider;
 import org.jgrapht.graph.SimpleDirectedWeightedGraph;
 import org.jgrapht.alg.FloydWarshallShortestPaths;
 
@@ -39,6 +42,7 @@ public class DataProductionPlanner {
 	//private Set<NetworkLink> links = new LinkedHashSet<NetworkLink>();
 	
 	//add logger
+        private boolean enableLogging = false; 
 	private static final Logger logger = Logger.getLogger( DataProductionPlanner.class.getName() );
 	private static final boolean printToConsole = false;
 	private static FileHandler fh;
@@ -84,24 +88,24 @@ public class DataProductionPlanner {
 	 */
 	public DataProductionPlanner(String logFilename, int deltaT, float beta){
 	    // Configure the logger with handler and formatter 
-	    try {   
-		logger.setUseParentHandlers(false);;
-	    	DataProductionPlanner.fh = new FileHandler(logFilename);  
-	        DataProductionPlanner.logger.addHandler(DataProductionPlanner.fh);
-	        DataProductionPlanner.formatter = new SimpleFormatter();  
-	        DataProductionPlanner.fh.setFormatter(DataProductionPlanner.formatter);  
-	        DataProductionPlanner.logger.setLevel(Level.ALL); 
-	       
-	     
-	    } catch (Exception e) {  
-	        e.printStackTrace();
-	        return;
-	    } 
-	    
+	    if (enableLogging){
+        	    try {   
+        		logger.setUseParentHandlers(false);;
+        	    	DataProductionPlanner.fh = new FileHandler(logFilename);  
+        	        DataProductionPlanner.logger.addHandler(DataProductionPlanner.fh);
+        	        DataProductionPlanner.formatter = new SimpleFormatter();  
+        	        DataProductionPlanner.fh.setFormatter(DataProductionPlanner.formatter);  
+        	        DataProductionPlanner.logger.setLevel(Level.ALL);      
+        	    } catch (Exception e) {  
+        	        e.printStackTrace();
+        	        return;
+        	    } 
+        	    logger.log(Level.INFO,"Planner started. deltaT = " + deltaT + " beta = " + beta);
+	    } else {
+	        DataProductionPlanner.logger.setLevel(Level.OFF);  
+	    }
 	    this.deltaT = deltaT;
-	    this.beta = beta;
-	    logger.log(Level.INFO,"Planner started. deltaT = " + deltaT + " beta = " + beta);
-	    
+	    this.beta = beta;	    
 	}
 	
 	/**
@@ -111,10 +115,10 @@ public class DataProductionPlanner {
 	 */
 	public boolean addNode(CompNode node){
 	    if (grid.addVertex(node)){ //if node added successfully 
-    		DataProductionPlanner.logger.log( Level.FINEST, "Node red from file: "+node.toString());      
+    		//DataProductionPlanner.logger.log( Level.FINEST, "Node red from file: "+node.toString());      
     		return true;
     	    }else{ //if node adding failled
-    		DataProductionPlanner.logger.log( Level.WARNING, "Dublicated nodes in the nodes file (line skipped): "+node.toString());				            	
+    		//DataProductionPlanner.logger.log( Level.WARNING, "Dublicated nodes in the nodes file (line skipped): "+node.toString());				            	
     		return false;
     	    }	    
 	}
@@ -126,10 +130,10 @@ public class DataProductionPlanner {
     		//link is valid and unique        			
     		 this.grid.setEdgeWeight(link, link.getBandwidth() * this.deltaT); //weight is bandwidth * time window
             	 //this.links.add(link);
-            	 DataProductionPlanner.logger.log( Level.FINEST, "Link red from file: " + link.toString());	
+            	 //DataProductionPlanner.logger.log( Level.FINEST, "Link red from file: " + link.toString());	
             	 return true;
     	    }else{
-    		 DataProductionPlanner.logger.log( Level.WARNING, "Duplicated link or missing nodes (line skipped): "+link.toString()); 
+    		 //DataProductionPlanner.logger.log( Level.WARNING, "Duplicated link or missing nodes (line skipped): "+link.toString()); 
     	         return false;
     	    }
 	}
@@ -824,13 +828,18 @@ public class DataProductionPlanner {
 	    DOTExporter<CompNode, NetworkLink> export=new DOTExporter<CompNode, NetworkLink>(nodeIds, nodeNames, linkNames, nodeAttributes, linkAttributes);
 	    
 	    //DOTExporter<CompNode, NetworkLink> export=new DOTExporter<CompNode, NetworkLink>();
-	    try {
-	        export.export(new FileWriter(outputFilename), g);
-	        DataProductionPlanner.logger.log( Level.INFO, "Graph was written to file" + outputFilename);
-	    }catch (IOException e){
-	    	e.printStackTrace();
-	    	DataProductionPlanner.logger.log( Level.WARNING, "Failed to write output file" + outputFilename + " " + e.getMessage());
+	    if (this.enableLogging){
+	           try {
+	                export.export(new FileWriter(outputFilename), g);
+	                DataProductionPlanner.logger.log( Level.INFO, "Graph was written to file" + outputFilename);
+	            }catch (IOException e){
+	                e.printStackTrace();
+	                DataProductionPlanner.logger.log( Level.WARNING, "Failed to write output file" + outputFilename + " " + e.getMessage());
+	            }
+	    } else {
+	        return;
 	    }
+
 	}	
 	
 	public void WriteGridODT(String outputFilename){
@@ -859,7 +868,8 @@ public class DataProductionPlanner {
 	    }
 	    
 	}
-
+	
+	
 	public double getMaxInputSize() {
 	    double datasetSize = 0;
 	    for (CompNode node: this.grid.vertexSet()){

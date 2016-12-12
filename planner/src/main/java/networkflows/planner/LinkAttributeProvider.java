@@ -66,7 +66,6 @@ public class LinkAttributeProvider implements ComponentAttributeProvider<Network
           	   color = "black";
                    break;
         }
-        
         map.put("weight", Double.toString(weight));
         map.put("color", color);
 		return map;

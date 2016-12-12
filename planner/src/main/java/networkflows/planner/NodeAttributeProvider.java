@@ -19,11 +19,11 @@ public class NodeAttributeProvider implements ComponentAttributeProvider<CompNod
     
 	public Map<String, String> getComponentAttributes(CompNode node) {
         Map<String, String> map =new LinkedHashMap<String, String>();
-        map.put("isInputSource", Boolean.toString(node.isInputSource()));
-        map.put("isOutputDestination", Boolean.toString(node.isOutputDestination()));
-        map.put("isInputDestination", Boolean.toString(node.isInputDestination()));           
-        map.put("isOutputSource", Boolean.toString(node.isOutputSource()));
-        map.put("isDummy", Boolean.toString(node.isDummy()));
+        //map.put("isInputSource", Boolean.toString(node.isInputSource()));
+        //map.put("isOutputDestination", Boolean.toString(node.isOutputDestination()));
+        //map.put("isInputDestination", Boolean.toString(node.isInputDestination()));           
+        //map.put("isOutputSource", Boolean.toString(node.isOutputSource()));
+        //map.put("isDummy", Boolean.toString(node.isDummy()));
         
         String color = "black";
         if (node.isInputSource()){ color = "red"; }
@@ -31,17 +31,19 @@ public class NodeAttributeProvider implements ComponentAttributeProvider<CompNod
         if (node.isOutputSource() && node.isInputSource()){ color = "magenta"; }
         map.put("color", color);
         
-        Double weight = 1000000.0;
+        Double weight = (double) node.getCpuN();
         switch (this.type) {
-          case BANDWIDTH:  break;
+          case BANDWIDTH:  weight = (double) node.getCpuN();
+          		   if (weight == 1){weight = 6000.0;} 
+          		   break;
+          		   
           case SOLUTION:   weight = Math.abs(node.getNettoInputFlow()) + Math.abs(node.getNettoOutputFlow());
-                           break;
-                           
+                           break;                           
                            
           default: weight = (double) node.getCpuN(); 
                    break;
        }              
-        map.put("weight",Double.toString(weight));
+        map.put("weight",String.format("%.0f",weight) );
         return map;
     }
 
