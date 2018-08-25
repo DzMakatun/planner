@@ -123,7 +123,7 @@ public class CompNode {
 		this.id = id;
 		this.name = name;
 		this.isDummy = isDummy;
-		this.isInputSource = isInputSource;
+		this.isInputSource = true; //isInputSource;
 		this.isOutputDestination = isOutputDestination;
 		this.isInputDestination = isInputDestination;
 		this.isOutputSource = isOutputSource;
@@ -199,7 +199,7 @@ public class CompNode {
 	       double dataCanProcess;
 	       if (this.busyCPUs < this.cpuN && this.currentFreeSpace > 0){ //unsaturated regime
 		   maxInputDataCanAccomodate = ( currentFreeSpace - disk * ( 1 - highMark) ) / ( 1 + beta) ;
-		   dataCanProcess =   (this.cpuN * averageInputFileSize) - this.waitingInputSize; // if there are free CPU - transfer as much data as possible;
+		   dataCanProcess =   (this.cpuN * averageInputFileSize * 1.1) - this.waitingInputSize; // if there are free CPU - transfer as much data as possible;
 		   
 	       }else{//saturated regime
 		   //dataCanProcess = (this.cpuN * deltaT) /  this.alpha; //input data that can be processed during the time interval
@@ -491,6 +491,13 @@ public class CompNode {
 
     public int getInputSourceCost() {
 	return this.inputSourceCost;	
+    }
+    
+    public int getInputDestCost() {
+    	if (this.cpuN > this.busyCPUs){
+    		return 0;
+    	}
+    	return 10;
     }
     
     public double getEstimatedProcessingThroughput(int time){

@@ -69,13 +69,13 @@ public class demo2 {
 	System.out.println("############################## OLD PLANNER #################################");
 	//solver.PrintGridSetup();		
 	
-	//System.out.println("Total flow: " + solver.solve() );
+	System.out.println("Total flow: " + solver.solve() );
 	
 	//solver.clean();
 	System.out.println("############################## NEW PLANNER #################################");
 	solver.planInitialDataDistribution(200000000, 0.01f);
 	//solver.WriteSolutionODT("output/demo_preplaning1.dot");
-	//System.out.println("Total flow: " + solver.solveWithCost() );
+	System.out.println("Total flow: " + solver.solveWithCost() );
 	//solver.WriteGridODT("output/demo_grid.dot");	
 	//solver.WriteSolutionODT("output/demo_solution1.dot");	
 	

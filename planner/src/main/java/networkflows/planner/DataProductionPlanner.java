@@ -42,7 +42,7 @@ public class DataProductionPlanner {
 	//private Set<NetworkLink> links = new LinkedHashSet<NetworkLink>();
 	
 	//add logger
-        private boolean enableLogging = false; 
+    private boolean enableLogging = false; 
 	private static final Logger logger = Logger.getLogger( DataProductionPlanner.class.getName() );
 	private static final boolean printToConsole = false;
 	private static FileHandler fh;
@@ -698,6 +698,7 @@ public class DataProductionPlanner {
 				dummyEdgeD = new NetworkLink(this.i--, node.getName()+"->t", node.getId(), this.sink.getId(), 0, true);
 				this.inputNetwork.addEdge(node, this.sink, dummyEdgeD); //dummy edge from processing node to sink			
 				this.inputNetwork.setEdgeWeight(dummyEdgeD, node.getInputWeight(this.deltaT, this.beta));
+				dummyEdgeD.setCost(node.getInputDestCost());
 			}	
 		}
 		
